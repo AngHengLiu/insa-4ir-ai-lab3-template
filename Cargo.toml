@@ -17,6 +17,17 @@ smallvec = { version = "1.14.0", features = ["union"] }
 itertools = "*"
 rand = "*"
 hashbrown = "*"
+clap = { version = "4.5.46", features = ["derive"] }
+anyhow = "1.0.99"
+ai-tournament = { git = "https://github.com/Atsuyo64/ai-tournament", tag = "v3.0.1" }
 
 [profile.release]
 debug = true
+
+[[bin]]
+name = "eval"
+path = "src/agent_bin.rs"
+
+[[bin]]
+name = "bench"
+path = "src/bench.rs"

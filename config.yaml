@@ -1,0 +1,6 @@
+eval: default # the name of the config used for final evaluation
+configs:
+  - default: "minimax 6"
+  - minimax5: "minimax 5" # add a second config so bench.rs as at least 1 match to run
+# Add more configs with this synthax: - name: "agents args"
+# Note that the yaml parser is handcrafed and therefor quite fragile. Do not try anything too fancy.

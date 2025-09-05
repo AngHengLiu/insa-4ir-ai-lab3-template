@@ -2,6 +2,7 @@ use std::{fmt::Display, ops::Add};
 
 use arrayvec::ArrayVec;
 use itertools::Itertools;
+use rand::seq::IndexedRandom;
 use Cell::*;
 use Color::*;
 use Dir::*;
@@ -123,17 +124,20 @@ impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "  ")?;
         for i in 0..N {
-            write!(f, "{}", char::from('A' as u8 + i as u8))?;
+            write!(f, " {} ", char::from('A' as u8 + i as u8))?;
         }
         write!(f, "   {:?}  ({} plies)", self.turn, self.num_ply)?;
-        write!(f, "\n1  ")?;
+        write!(f, "\n1 ███")?;
         for ((l, c), p) in Position::all().map(|p| (p.coords(), p)).sorted() {
-            write!(f, "{} ", self.at(p))?;
+            write!(f, " {} ", self.at(p))?;
+            if (c as usize) < N - 1 {
+                write!(f, "███")?;
+            }
             let next_line = l + 2;
             if c as usize == N - 1 {
                 write!(f, "\n{next_line:<2}")?;
             } else if c as usize == N - 2 && (l as usize) < (N - 1) {
-                write!(f, "\n{next_line:<2} ")?;
+                write!(f, "\n{next_line:<2}███")?;
             }
         }
         Ok(())
@@ -170,16 +174,39 @@ impl Board {
             num_ply: 0,
         }
     }
-    pub fn parse(board_str: &str, color: Color) -> Board {
+
+    fn try_parse_heading(heading: &str) -> Option<(Color, u16)> {
+        let color = if heading.contains("Black") {
+            Color::Black
+        } else {
+            Color::White
+        };
+        let start = heading.find('(')? + 1;
+        let rest = &heading[start..];
+        let end = rest.find(' ')?;
+        let plies = rest[..end].parse().ok()?;
+        Some((color, plies))
+    }
+
+    pub fn parse(board_str: &str) -> Board {
         let mut empty = Board {
             cells: [None; NUM_CELLS],
-            turn: color,
+            turn: Color::White,
             num_ply: 0,
         };
         let mut ps = Position::all();
-        let lines: Vec<_> = board_str.lines().collect();
+        let mut lines = board_str.lines().peekable();
+
+        // Only parse and consume the first line if it is a correct heading
+        if let Some((color, plies)) = lines.peek().and_then(|line| Self::try_parse_heading(line)) {
+            empty.turn = color;
+            empty.num_ply = plies;
+            // Header line is valid, consume it
+            let _ = lines.next();
+        };
+
         let mut parsed_lines = 0;
-        for line in lines.into_iter().rev() {
+        for line in lines.rev() {
             for c in line.chars() {
                 match c {
                     'w' => empty.set(ps.next().unwrap(), Cell::WhitePawn),
@@ -196,6 +223,19 @@ impl Board {
             }
         }
         empty
+    }
+
+    /// Applies a number of randomly select moves and return the resulting board.
+    ///
+    /// This function is typically used to generate original starting point for the games.
+    pub fn after_random_moves(n: usize) -> Board {
+        let mut cur = Self::init();
+        for _ in 0..n {
+            let actions = &mut cur.actions();
+            let action = actions.choose(&mut rand::rng()).unwrap();
+            cur.apply_mut(action);
+        }
+        cur
     }
 
     /// Count the number of cells with the given value
@@ -356,7 +396,7 @@ impl Board {
         self.add_jumps::<2>(initial_pos, out);
     }
     fn add_queen_jumps(&self, initial_pos: Position, out: &mut Vec<Action>) {
-        self.add_jumps::<QUEEN_MAX_MOVE_LENGTH>(initial_pos, out); // TODO: should be N-1
+        self.add_jumps::<QUEEN_MAX_MOVE_LENGTH>(initial_pos, out);
     }
     fn add_jumps<const MAX_MOVE_LENGTH: usize>(
         &self,
@@ -553,7 +593,7 @@ impl Add<Move> for Position {
 /// The representation is a bit wasteful consider that the list will very rarely contain more than a handful elements.
 /// The size would sizeof(Move) * NUM_PAWNS bytes = 24 bytes
 /// The arrayvec consumes another 2 bytes of the number of elements
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Action(Position, ArrayVec<Move, NUM_PAWNS>);
 impl Action {
     pub fn empty(pos: Position) -> Action {
@@ -592,28 +632,25 @@ impl Display for Action {
 
 #[cfg(test)]
 mod test {
+    use rand::random_range;
+
     use super::*;
 
     #[test]
     fn test_parse() {
-        let b = "
-         ABCDEFGH
-        1 b b b b
-        2b b b b
-        3 b b b b
-        4. . . .
-        5 . . . .
-        6w w w w
-        7 w w w w
-        8w w w w";
-        let board = Board::parse(b, White);
-        println!("{board}");
-        assert!(board == Board::init());
+        // Ideally, tests should be deterministic. However, generating random boards
+        // helps validate the parser against a wide range of scenarios without manually
+        // writing out 100 board strings.
+        for _ in 0..100 {
+            let random_board = Board::after_random_moves(random_range(3..6));
+            let parsed_board = Board::parse(&format!("{random_board}"));
+            assert_eq!(random_board, parsed_board);
+        }
     }
 
     fn validate_actions(board: &str, expected_actions: &[&str]) {
         println!("====================");
-        let board = Board::parse(board, White);
+        let board = Board::parse(board);
         let actions = board.actions();
         let actions = actions
             .into_iter()
@@ -657,5 +694,160 @@ mod test {
            8. . . .",
             &["B1 E4 A8", "B1 E4 B7", "B1 E4 C6"],
         );
+    }
+}
+
+impl Display for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            White => write!(f, "White"),
+            Black => write!(f, "Black"),
+        }
+    }
+}
+
+impl std::str::FromStr for Color {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "White" => Ok(White),
+            "Black" => Ok(Black),
+            _ => Err(()),
+        }
+    }
+}
+
+impl std::str::FromStr for Board {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Board::parse(s))
+    }
+}
+
+impl std::str::FromStr for Position {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "A8" => Ok(Position::new(5)),
+            "C8" => Ok(Position::new(6)),
+            "E8" => Ok(Position::new(7)),
+            "G8" => Ok(Position::new(8)),
+            "B7" => Ok(Position::new(10)),
+            "D7" => Ok(Position::new(11)),
+            "F7" => Ok(Position::new(12)),
+            "H7" => Ok(Position::new(13)),
+            "A6" => Ok(Position::new(14)),
+            "C6" => Ok(Position::new(15)),
+            "E6" => Ok(Position::new(16)),
+            "G6" => Ok(Position::new(17)),
+            "B5" => Ok(Position::new(19)),
+            "D5" => Ok(Position::new(20)),
+            "F5" => Ok(Position::new(21)),
+            "H5" => Ok(Position::new(22)),
+            "A4" => Ok(Position::new(23)),
+            "C4" => Ok(Position::new(24)),
+            "E4" => Ok(Position::new(25)),
+            "G4" => Ok(Position::new(26)),
+            "B3" => Ok(Position::new(28)),
+            "D3" => Ok(Position::new(29)),
+            "F3" => Ok(Position::new(30)),
+            "H3" => Ok(Position::new(31)),
+            "A2" => Ok(Position::new(32)),
+            "C2" => Ok(Position::new(33)),
+            "E2" => Ok(Position::new(34)),
+            "G2" => Ok(Position::new(35)),
+            "B1" => Ok(Position::new(37)),
+            "D1" => Ok(Position::new(38)),
+            "F1" => Ok(Position::new(39)),
+            "H1" => Ok(Position::new(40)),
+            _ => Err(()),
+        }
+    }
+}
+
+impl std::str::FromStr for Action {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut pos = vec![];
+        for s in s.split(" ") {
+            pos.push(Position::from_str(s)?)
+        }
+        if pos.len() < 2 || pos.len() - 1 > NUM_PAWNS {
+            return Err(());
+        }
+        let mut positions = pos.into_iter();
+        let first = positions.next().unwrap();
+        let mut moves = ArrayVec::<Move, NUM_PAWNS>::new();
+        let mut current = first;
+        for pos in positions {
+            // move = pos - current
+            let (current_line, current_column) = current.coords();
+            let (new_line, new_column) = pos.coords();
+            // compute direction based of two position's line and column differences
+            let dir = if current_line < new_line && current_column < new_column {
+                Dir::DownRight
+            } else if current_line < new_line && current_column > new_column {
+                Dir::DownLeft
+            } else if current_line > new_line && current_column < new_column {
+                Dir::UpRight
+            } else if current_line > new_line && current_column > new_column {
+                Dir::UpLeft
+            } else {
+                return Err(());
+            };
+            // move length can be computed just like this:
+            let repeat = current_line.abs_diff(new_line);
+            let m = dir.repeat(repeat);
+
+            moves.push(m);
+            current = pos;
+        }
+        Ok(Action(first, moves))
+    }
+}
+
+#[test]
+fn test_parse_pos() {
+    for pos in Position::all() {
+        assert_eq!(pos, pos.to_string().parse().expect("Parse error"));
+    }
+}
+
+#[test]
+fn test_parse_action() {
+    let board = Board::parse(
+        "
+             ABCDEFGH
+            1 . . . .
+            2W . . .
+            3 B . . .
+            4. B . .
+            5 . . . .
+            6. . . .
+            7 . . . .
+            8. . . .",
+    );
+    for action in board.actions() {
+        assert_eq!(action, action.to_string().parse().expect("Oops ?"));
+    }
+
+    let board = Board::parse(
+        "
+        ABCDEFGH
+       1 W . . .
+       2. . . .
+       3 . B . .
+       4B B . .
+       5 . B . .
+       6B . . .
+       7 . . . .
+       8. . . .",
+    );
+    for action in board.actions() {
+        assert_eq!(action, action.to_string().parse().expect("Oops ?"));
     }
 }
