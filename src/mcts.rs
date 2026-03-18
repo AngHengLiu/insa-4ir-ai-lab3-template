@@ -111,7 +111,7 @@ pub struct MctsEngine {
 impl MctsEngine {
     pub fn new(exploration_weight: f32) -> MctsEngine {
         MctsEngine {
-            nodes: HashMap::with_capacity(1_000_000), // limits timeout due to re-hash/allocation
+            nodes: HashMap::new(),
             exploration_weight,
         }
     }
@@ -153,7 +153,7 @@ impl Engine for MctsEngine {
 
 #[cfg(test)]
 mod test {
-    use crate::board::Color;
+    use crate::Color;
 
     use super::{Board, MctsEngine};
 
@@ -170,6 +170,7 @@ mod test {
             6 . b w .
             7  . . w .
             8 w w w .",
+            Color::White,
         );
         let mut mcts = MctsEngine::new(1.);
 
