@@ -29,8 +29,8 @@ pub fn white_score(board: &Board) -> f32 {
             return 1.0;
         }
     } else {
-        // If error - TO BE REVIEWED
-        return 0.3
+        // Compiler comprend que on aura jamais ce cas
+        unreachable!();
     }
         
 }
