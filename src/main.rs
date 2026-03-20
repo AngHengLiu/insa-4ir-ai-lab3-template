@@ -101,16 +101,18 @@ fn example_game() {
 #[allow(unused)]
 fn test_rollout() {
 
-    let mut index = 0.0; 
-    let it = 100.0; 
+    let mut index = 0.0;  
     let mut sum = 0.0;
 
-    while index < it {
+    let timer = Instant::now();
+
+    while timer.elapsed().as_millis() < 1000 {
         let board = Board::init(); 
         sum += mcts::rollout(&board); 
         index += 1.0; 
     }
 
-    println!("Mean rollout : {}", (sum/index))
+    println!("Mean rollout : {}", (sum/index));
+    println!("Number of execution: {}", index);
 }
 

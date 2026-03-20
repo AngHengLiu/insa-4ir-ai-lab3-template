@@ -40,7 +40,7 @@ pub fn rollout(board: &Board) -> f32 {
 
     let mut current_board : Board = board.clone(); 
 
-    while (board.is_draw() || board.actions().is_empty()) {
+    while !(current_board.is_draw() || current_board.actions().is_empty()) {
         // 1. choose a random action 
         let chosen_action : Option<Action> = (current_board.actions()).choose(&mut rand::rng()).cloned();
 
