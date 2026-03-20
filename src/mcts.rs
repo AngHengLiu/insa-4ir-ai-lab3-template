@@ -22,7 +22,21 @@ pub fn white_score(board: &Board) -> f32 {
 
 /// Performs a single rollout and returns the evaluation of the final state.
 pub fn rollout(board: &Board) -> f32 {
-    todo!()
+
+    let mut current_board : Board = board.clone(); 
+
+    while (board.is_draw() || board.actions().is_empty()) {
+        // 1. choose a random action 
+        let chosen_action : Option<Action> = (current_board.actions()).choose(&mut rand::rng()).cloned();
+
+        // 2. generate the resulting state 
+        match chosen_action {
+            None => panic!("No more valid actions are available but the board is not final !"),
+            Some(action) =>  current_board = current_board.apply(&action),
+        }
+    }
+
+    white_score(&current_board)
 }
 
 /// Alias type to repesent a count of selections.

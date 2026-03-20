@@ -67,7 +67,7 @@ fn play_game<'a>(
 fn main() {
     let b = Board::init();
 
-    example_game();
+    test_rollout();
 }
 
 #[allow(unused)]
@@ -86,9 +86,26 @@ fn example_game() {
         &board,
         &mut white_engine,
         &mut black_engine,
-        Duration::from_millis(500),
+        Duration::from_millis(5),
         true,
     );
 
     println!("Final board: \n{final_board}");
 }
+
+#[allow(unused)]
+fn test_rollout() {
+
+    let mut index = 0.0; 
+    let it = 100.0; 
+    let mut sum = 0.0;
+
+    while index < it {
+        let board = Board::init(); 
+        sum += mcts::rollout(&board); 
+        index += 1.0; 
+    }
+
+    println!("Mean rollout : {}", (sum/index))
+}
+
