@@ -6,6 +6,7 @@ use engine::Engine;
 use mcts::MctsEngine;
 use minimax::MinimaxEngine;
 use rand::seq::IndexedRandom;
+use mcts::*;
 
 pub mod board;
 pub mod engine;
@@ -91,4 +92,8 @@ fn example_game() {
     );
 
     println!("Final board: \n{final_board}");
+
+    // Printing white's score
+    let white_score = white_score(&final_board);
+    println!("White's score: {white_score}");
 }

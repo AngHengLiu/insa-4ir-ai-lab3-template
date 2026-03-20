@@ -17,7 +17,22 @@ pub fn white_score(board: &Board) -> f32 {
         board.is_draw() || board.actions().is_empty(),
         "The board is not final"
     );
-    todo!()
+    // Draw if max number of turns played
+    if board.is_draw() {
+        return 0.5;
+    } else if board.actions().is_empty() {
+        if board.turn == Color::White {
+        // Loose if it is white who has no available actions left
+            return 0.0;
+        // Win if it is black who has no available actions left
+        } else {
+            return 1.0;
+        }
+    } else {
+        // If error - TO BE REVIEWED
+        return 0.3
+    }
+        
 }
 
 /// Performs a single rollout and returns the evaluation of the final state.
