@@ -158,14 +158,20 @@ impl MctsEngine {
         if !self.nodes.contains_key(board) {                                    // If board not already "rollouted"
             let initial_eval = rollout(board);                                  // Rollout
             let new_node : Node = Node::init(board,initial_eval);               // Create a new node with inital evaluation
-            self.nodes.insert(board,new_node);                                  // Add it to the graph (= expand)
+            self.nodes.insert(board,new_node);
+            return initial_eval;                                  // Add it to the graph (= expand)
         } else {
             let best_action : Option<Action> = select_ucb1(board);              // Selects best action
             if best_action != None {
                 let new_board : Board = board.apply(best_action);               // Resulting state
                 let action_eval : f32 = self.playout(new_board);                                        // Recursive playout
                 let updated_eval = self.update_eval(board,best_action,action_eval);         // Update evaluation
+                return updated_eval;
+            } else {
+             return self.nodes[board].eval;
             }
+
+          
         }
     }
 
@@ -173,7 +179,10 @@ impl MctsEngine {
     /// which yieled an evaluation of `action_eval` (Q(s,a))
     fn update_eval(&mut self, board: &Board, action: &Action, action_eval: f32) -> f32 {
         debug_assert!(self.nodes.contains_key(board));
-        todo!()
+        
+        self.nodes[board].count += 1;
+        self.nodes[board].edge += 1
+        // Il faut mettre à jour Q(s,a)!!
     }
 }
 
