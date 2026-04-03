@@ -155,10 +155,18 @@ impl MctsEngine {
 
     /// Performs a playout for this board (s) and returns the (updated) evaluation of the board (Q(s))
     fn playout(&mut self, board: &Board) -> f32 {
-        if !self.nodes.contains_key(board) {
-            todo!()
+        if !self.nodes.contains_key(board) {                    // If board not already "rollouted"
+            let initial_eval = rollout(board);                  // Rollout
+            let new_node = Node::init(board,initial_eval);      // Create a new node with inital evaluation
+            self.nodes.insert(board,new_node);                  // Add it to the graph (= expand)
         } else {
-            todo!()
+            let best_action = select_ucb1(board);               // Selects best action
+            if best_action != None {
+                let new_board = board.apply(best_action);       // Resulting state
+                self.playout(new_board);                        // Recursive playout
+                let updated_eval = board.update_eval()          // Update evaluation
+            }
+          
         }
     }
 
