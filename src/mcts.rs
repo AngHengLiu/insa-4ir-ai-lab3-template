@@ -188,6 +188,21 @@ impl MctsEngine {
     /// which yieled an evaluation of `action_eval` (Q(s,a))
     fn update_eval(&mut self, board: &Board, action: &Action, action_eval: f32) -> f32 {
         debug_assert!(self.nodes.contains_key(board));
+        
+        let mut new_node : Node = Node::init(board.clone(), 0.0); //A MODIFIER
+
+        new_node.count = &self.nodes[board].count + 1;
+
+        
+
+        for out_edge in &self.nodes[board].out_edges {
+            for out_new in new_node.out_edges {
+                if (out_edge.action == out_new.action) {
+                    out_new = out_edge; 
+                }
+            }
+            
+        }
         todo!()
     }
 }
