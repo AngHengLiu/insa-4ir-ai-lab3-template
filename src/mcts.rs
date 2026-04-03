@@ -209,7 +209,23 @@ impl MctsEngine {
 
 impl Engine for MctsEngine {
     fn select(&mut self, board: &Board, deadline: Instant) -> Option<Action> {
-        todo!()
+
+        let mut time_remaining: bool = Instant::now() < deadline;
+        let mut best_action : Option<Action> = None;
+
+        while time_remaining {
+            self.playout(board);
+
+            let max_visits = 0; 
+            let mut actions = self.nodes.get_mut(board).unwrap();
+
+            for out_edge in actions.out_edges .iter_mut() {
+                if out_edge.visits > max_visits {
+                    best_action = Some(out_edge.action.clone())
+                }
+            }
+        }
+        best_action
     }
 
     fn clear(&mut self) {
