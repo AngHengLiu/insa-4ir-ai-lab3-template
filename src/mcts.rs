@@ -161,9 +161,9 @@ impl MctsEngine {
         // If board not already "rollouted"
         if !self.nodes.contains_key(&current_board) {                                    
             let initial_eval = rollout(&current_board);                                     // Rollout
-            let new_node : Node = Node::init(current_board.clone(),initial_eval);                   // Create a new node with inital evaluation
+            let new_node : Node = Node::init(current_board.clone(),initial_eval);           // Create a new node with inital evaluation
             self.nodes.insert(current_board,new_node);
-            return initial_eval;                                                    // Add it to the graph (= expand)
+            return initial_eval;                                                            // Add it to the graph (= expand)
         } else {
             let best_action : Option<Action> = self.select_ucb1(&current_board);
             let mut new_board : Board;
@@ -172,8 +172,8 @@ impl MctsEngine {
             match best_action {
                 // If board is not final
                 Some(x) => {new_board = current_board.apply(&x);
-                        action_eval = self.playout(&new_board);                    // Recursive playout
-                        updated_eval = self.update_eval(&current_board,&x,action_eval); // Update evaluation
+                        action_eval = self.playout(&new_board);                             // Recursive playout
+                        updated_eval = self.update_eval(&current_board,&x,action_eval);     // Update evaluation
                         return updated_eval},
                 // If board is final
                 None => return self.nodes[board].eval,
