@@ -177,10 +177,29 @@ impl MctsEngine {
 
     /// Performs a playout for this board (s) and returns the (updated) evaluation of the board (Q(s))
     fn playout(&mut self, board: &Board) -> f32 {
-        if !self.nodes.contains_key(board) {
-            todo!()
+
+        let current_board : Board = board.clone();
+
+        // If board not already "rollouted"
+        if !self.nodes.contains_key(&current_board) {                                    
+            let initial_eval = rollout(&current_board);                                     // Rollout
+            let new_node : Node = Node::init(current_board.clone(),initial_eval);           // Create a new node with inital evaluation
+            self.nodes.insert(current_board,new_node);
+            return initial_eval;                                                            // Add it to the graph (= expand)
         } else {
-            todo!()
+            let best_action : Option<Action> = self.select_ucb1(&current_board);
+            let mut new_board : Board;
+            let mut action_eval : f32;
+            let updated_eval : f32;
+            match best_action {
+                // If board is not final
+                Some(x) => {new_board = current_board.apply(&x);
+                        action_eval = self.playout(&new_board);                             // Recursive playout
+                        updated_eval = self.update_eval(&current_board,&x,action_eval);     // Update evaluation
+                        return updated_eval},
+                // If board is final
+                None => return self.nodes[board].eval,
+            };
         }
     }
 
@@ -188,23 +207,34 @@ impl MctsEngine {
     /// which yieled an evaluation of `action_eval` (Q(s,a))
     fn update_eval(&mut self, board: &Board, action: &Action, action_eval: f32) -> f32 {
         debug_assert!(self.nodes.contains_key(board));
-        
-        let mut new_node : Node = Node::init(board.clone(), 0.0); //A MODIFIER
 
-        new_node.count = &self.nodes[board].count + 1;
+        let mut updated_node : &mut Node = &mut self.nodes.get_mut(board).unwrap();
 
-        
+        // Update the number of times this node was selected
+        updated_node.count += 1;
+    
+        let mut selected_edge_eval : f32 = 0.0;
+        let mut sum : Count = 0;
 
-        for out_edge in &self.nodes[board].out_edges {
-            for out_new in new_node.out_edges {
-                if (out_edge.action == out_new.action) {
-                    out_new = out_edge; 
-                }
+        // Finding which edge to update
+        for mut out_edge in updated_node.out_edges .iter_mut() {
+            if *action == out_edge.action {
+                selected_edge_eval = out_edge.eval ;
+                // Update number of times this action was selected for this board
+                out_edge.visits += 1;
+                // Update evaluation of taking action a
+                out_edge.eval = action_eval;
             }
-            
+            // Computing the sum term for the updated evaluation of the node
+            sum = sum + out_edge.visits/updated_node.count;  
         }
-        todo!()
+
+        // Updates evaluation for node
+        updated_node.eval = updated_node.initial_eval/(updated_node.count as f32) + (sum as f32) * selected_edge_eval;
+
+        return updated_node.eval;
     }
+        
 }
 
 impl Engine for MctsEngine {
