@@ -186,7 +186,7 @@ impl MctsEngine {
     fn update_eval(&mut self, board: &Board, action: &Action, action_eval: f32) -> f32 {
         debug_assert!(self.nodes.contains_key(board));
 
-        let mut updated_node : Node = self.nodes[board];
+        let mut updated_node : &Node = &mut self.nodes[board];
 
         // Update the number of times this node was selected
         updated_node.count += 1;
@@ -195,7 +195,7 @@ impl MctsEngine {
         let mut sum : Count = 0;
 
         // Finding which edge to update
-        for out_edge in self.nodes[board].out_edges {
+        for mut out_edge in self.nodes[board].out_edges {
             if *action == out_edge.action {
                 selected_out_edge = out_edge;
                 // Update number of times this action was selected for this board
@@ -208,7 +208,7 @@ impl MctsEngine {
         }
 
         // Updates evaluation for node
-        updated_node.eval = updated_node.initial_eval/updated_node.count + sum * selected_out_edge.eval;
+        updated_node.eval = updated_node.initial_eval/(updated_node.count as f32) + (sum as f32) * selected_out_edge.eval;
 
         return updated_node.eval;
     }
