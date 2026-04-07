@@ -163,8 +163,18 @@ impl MctsEngine {
         }
 
         for out_edge in &self.nodes[board].out_edges {
-            let ucb1 = turn * out_edge.eval + self.exploration_weight * ((2 * (node.count.ilog(10)) / (out_edge.visits as u32)).isqrt() as f32);
 
+            let ucb1 : f32 ; 
+
+            if (out_edge.visits == 0 ) {
+                ucb1 = turn * out_edge.eval + self.exploration_weight * f32::INFINITY;
+
+            }
+            else {
+                ucb1 = turn * out_edge.eval + self.exploration_weight * ((2 * (node.count.ilog(10)) / (out_edge.visits as u32)).isqrt() as f32);
+
+            }
+            
             if ucb1 >= max_ucb1 {
                 max_ucb1 = ucb1; 
                 best_action = Some(out_edge.action.clone())
