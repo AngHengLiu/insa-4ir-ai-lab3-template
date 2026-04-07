@@ -150,7 +150,29 @@ impl MctsEngine {
     /// Selects the best action according to UCB1, or `None` if no action is available.
     pub fn select_ucb1(&self, board: &Board) -> Option<Action> {
         debug_assert!(self.nodes.contains_key(board));
-        todo!()
+        
+        let mut best_action : Option<Action> = None;
+        let mut max_ucb1 : f32 = 0.0; 
+        let node : &Node = &self.nodes[board];
+
+        let turn: f32;
+        if board.turn == Color::White {
+            turn = 1.0; 
+        } else {
+            turn = -1.0; 
+        }
+
+        for out_edge in &self.nodes[board].out_edges {
+            let ucb1 = turn * out_edge.eval + self.exploration_weight * ((2 * (node.count.ilog(10)) / (out_edge.visits as u32)).isqrt() as f32);
+
+            if ucb1 >= max_ucb1 {
+                max_ucb1 = ucb1; 
+                best_action = Some(out_edge.action.clone())
+           }
+        }
+
+        best_action
+
     }
 
     /// Performs a playout for this board (s) and returns the (updated) evaluation of the board (Q(s))
@@ -217,7 +239,23 @@ impl MctsEngine {
 
 impl Engine for MctsEngine {
     fn select(&mut self, board: &Board, deadline: Instant) -> Option<Action> {
-        todo!()
+
+        let mut time_remaining: bool = Instant::now() < deadline;
+        let mut best_action : Option<Action> = None;
+
+        while time_remaining {
+            self.playout(board);
+
+            let max_visits = 0; 
+            let mut actions = self.nodes.get_mut(board).unwrap();
+
+            for out_edge in actions.out_edges .iter_mut() {
+                if out_edge.visits > max_visits {
+                    best_action = Some(out_edge.action.clone())
+                }
+            }
+        }
+        best_action
     }
 
     fn clear(&mut self) {
