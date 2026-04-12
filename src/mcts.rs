@@ -250,10 +250,9 @@ impl MctsEngine {
 impl Engine for MctsEngine {
     fn select(&mut self, board: &Board, deadline: Instant) -> Option<Action> {
 
-        let mut time_remaining: bool = Instant::now() < deadline;
         let mut best_action : Option<Action> = None;
 
-        while time_remaining {
+        while Instant::now() < deadline {
             self.playout(board);
 
             let max_visits = 0; 
