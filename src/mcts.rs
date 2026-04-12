@@ -224,10 +224,10 @@ impl MctsEngine {
         updated_node.count += 1;
     
         let mut selected_edge_eval : f32 = 0.0;
-        let mut sum : Count = 0;
+        let mut sum : f32 = 0.0;
 
         // Finding which edge to update
-        for mut out_edge in updated_node.out_edges .iter_mut() {
+        for mut out_edge in updated_node.out_edges.iter_mut() {
             if *action == out_edge.action {
                 selected_edge_eval = out_edge.eval ;
                 // Update number of times this action was selected for this board
@@ -236,11 +236,11 @@ impl MctsEngine {
                 out_edge.eval = action_eval;
             }
             // Computing the sum term for the updated evaluation of the node
-            sum = sum + out_edge.visits/updated_node.count;  
+            sum = sum + ((out_edge.visits/updated_node.count) as f32) * out_edge.eval;  
         }
 
         // Updates evaluation for node
-        updated_node.eval = updated_node.initial_eval/(updated_node.count as f32) + (sum as f32) * selected_edge_eval;
+        updated_node.eval = updated_node.initial_eval/(updated_node.count as f32) + sum;
 
         return updated_node.eval;
     }
@@ -298,7 +298,7 @@ mod test {
 
         println!("{board}");
 
-        for i in 1..=4 {
+        for i in 1..=1000 {
             mcts.playout(&board);
             println!("After {i} playouts: \n{}", mcts.nodes[&board]);
         }
