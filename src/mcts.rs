@@ -168,11 +168,9 @@ impl MctsEngine {
 
             if (out_edge.visits == 0 ) {
                 ucb1 = turn * out_edge.eval + self.exploration_weight * f32::INFINITY;
-
             }
             else {
                 ucb1 = turn * out_edge.eval + self.exploration_weight * ((2 * (node.count.ilog(10)) / (out_edge.visits as u32)).isqrt() as f32);
-
             }
             
             if ucb1 >= max_ucb1 {
@@ -180,13 +178,11 @@ impl MctsEngine {
                 best_action = Some(out_edge.action.clone())
            }
         }
-
         best_action
-
     }
 
     /// Performs a playout for this board (s) and returns the (updated) evaluation of the board (Q(s))
-    fn playout(&mut self, board: &Board) -> (f32, u32) {
+    fn playout(&mut self, board: &Board) -> (f32, u64) {
 
         let current_board : Board = board.clone();
 
@@ -201,7 +197,7 @@ impl MctsEngine {
             let mut new_board : Board;
             let mut action_eval : f32;
             let updated_eval : f32;
-            let nb_playout : u32; 
+            let nb_playout : u64; 
             match best_action {
                 // If board is not final
                 Some(x) => {new_board = current_board.apply(&x);
@@ -249,34 +245,36 @@ impl MctsEngine {
 }
 
 impl Engine for MctsEngine {
-    fn select(&mut self, board: &Board, deadline: Instant) -> Option<Action> {
+    fn select(&mut self, board: &Board, deadline: Instant, print: bool) -> Option<Action> {
 
-        let mut start = Instant::now(); 
-        let mut time_remaining: bool = Instant::now() < deadline;
-        let mut one_sec: bool = Instant::duration_since(&Instant::now(), start) < Duration::from_secs(1);
+        let mut time_remaining: bool = Instant::now() < deadline; 
         let mut best_action : Option<Action> = None;
-        let mut nb_playout = 0; 
-        let mut depth_playout = 0;
-        let mut nb_sec = 0;  
+        let mut nb_playout: u64 = 0; 
+        let mut depth_playout: u64 = 0;
 
         while time_remaining {
 
-            while one_sec {
-                depth_playout += self.playout(board).1;
-                nb_playout += 1; 
+            depth_playout += self.playout(board).1;
+            nb_playout += 1; 
 
-                let max_visits = 0; 
-                let mut actions = self.nodes.get_mut(board).unwrap();
+            let max_visits = 0; 
+            let mut actions = self.nodes.get_mut(board).unwrap();
 
-                for out_edge in actions.out_edges .iter_mut() {
-                    if out_edge.visits > max_visits {
-                        best_action = Some(out_edge.action.clone())
-                    }
+            for out_edge in actions.out_edges .iter_mut() {
+                if out_edge.visits >= max_visits {
+                    best_action = Some(out_edge.action.clone())
                 }
-            }
-            start = Instant::now(); 
-            nb_sec += 1; 
+            } 
         }
+
+        if print {
+             let playout_per_sec = nb_playout / deadline.elapsed().as_secs(); 
+            let average_depth = depth_playout / nb_playout;  
+            print!("Number of playouts per second : {} \n", nb_playout / deadline.elapsed().as_secs()); 
+            print!("Average playout depth : {} \n", depth_playout / nb_playout); 
+            //print!("Lenght of the principal variation : {} \n", self.length_pv(board, 0)); 
+        }
+
         best_action
     }
 

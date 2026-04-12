@@ -24,6 +24,7 @@ warning : for each part, we must modify some parts of the code to print differen
 ### Carole 
 - number of playout per second
 - average playout depth 
+- find where to print all parameters to be able to access them at the beginning, the middle and the end of the game 
 
 ## MCTS vs MCTS 
 goal : study the best parameters 
