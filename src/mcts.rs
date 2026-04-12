@@ -251,23 +251,31 @@ impl MctsEngine {
 impl Engine for MctsEngine {
     fn select(&mut self, board: &Board, deadline: Instant) -> Option<Action> {
 
+        let mut start = Instant::now(); 
         let mut time_remaining: bool = Instant::now() < deadline;
+        let mut one_sec: bool = Instant::duration_since(&Instant::now(), start) < Duration::from_secs(1);
         let mut best_action : Option<Action> = None;
         let mut nb_playout = 0; 
-        let mut depth_playout = 0; 
+        let mut depth_playout = 0;
+        let mut nb_sec = 0;  
 
         while time_remaining {
-            depth_playout += self.playout(board).1;
-            nb_playout += 1; 
 
-            let max_visits = 0; 
-            let mut actions = self.nodes.get_mut(board).unwrap();
+            while one_sec {
+                depth_playout += self.playout(board).1;
+                nb_playout += 1; 
 
-            for out_edge in actions.out_edges .iter_mut() {
-                if out_edge.visits > max_visits {
-                    best_action = Some(out_edge.action.clone())
+                let max_visits = 0; 
+                let mut actions = self.nodes.get_mut(board).unwrap();
+
+                for out_edge in actions.out_edges .iter_mut() {
+                    if out_edge.visits > max_visits {
+                        best_action = Some(out_edge.action.clone())
+                    }
                 }
             }
+            start = Instant::now(); 
+            nb_sec += 1; 
         }
         best_action
     }
