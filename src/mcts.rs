@@ -186,7 +186,7 @@ impl MctsEngine {
     }
 
     /// Performs a playout for this board (s) and returns the (updated) evaluation of the board (Q(s))
-    fn playout(&mut self, board: &Board) -> f32 {
+    fn playout(&mut self, board: &Board) -> (f32, u32) {
 
         let current_board : Board = board.clone();
 
@@ -195,20 +195,21 @@ impl MctsEngine {
             let initial_eval = rollout(&current_board);                                     // Rollout
             let new_node : Node = Node::init(current_board.clone(),initial_eval);           // Create a new node with inital evaluation
             self.nodes.insert(current_board,new_node);
-            return initial_eval;                                                            // Add it to the graph (= expand)
+            return (initial_eval, 0);                                                            // Add it to the graph (= expand)
         } else {
             let best_action : Option<Action> = self.select_ucb1(&current_board);
             let mut new_board : Board;
             let mut action_eval : f32;
             let updated_eval : f32;
+            let nb_playout : u32; 
             match best_action {
                 // If board is not final
                 Some(x) => {new_board = current_board.apply(&x);
-                        action_eval = self.playout(&new_board);                             // Recursive playout
+                        (action_eval, nb_playout) = self.playout(&new_board);                             // Recursive playout
                         updated_eval = self.update_eval(&current_board,&x,action_eval);     // Update evaluation
-                        return updated_eval},
+                        return (updated_eval, nb_playout + 1)},
                 // If board is final
-                None => return self.nodes[board].eval,
+                None => return (self.nodes[board].eval, 0),
             };
         }
     }
@@ -252,9 +253,12 @@ impl Engine for MctsEngine {
 
         let mut time_remaining: bool = Instant::now() < deadline;
         let mut best_action : Option<Action> = None;
+        let mut nb_playout = 0; 
+        let mut depth_playout = 0; 
 
         while time_remaining {
-            self.playout(board);
+            depth_playout += self.playout(board).1;
+            nb_playout += 1; 
 
             let max_visits = 0; 
             let mut actions = self.nodes.get_mut(board).unwrap();
