@@ -24,10 +24,21 @@ warning : for each part, we must modify some parts of the code to print differen
 ### Carole 
 - number of playout per second
 - average playout depth 
+- print the information and which turn we are
 
 ## MCTS vs MCTS 
 goal : study the best parameters 
 
 ## MCTS against other engines
+
+## How to evaluate 
+
+To do a table (and maybe a graph based on the table) with : 
+- type of engine used 
+- who wins 
+- playout per sec 
+- depth playout
+- lenght of principal variation 
+- parameter to evaluate (weight of exploration for example)
 
 
