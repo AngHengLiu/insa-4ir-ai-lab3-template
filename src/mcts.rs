@@ -1,6 +1,5 @@
 use std::{
-    fmt::Display,
-    time::{Duration, Instant},
+    f32::consts::E, fmt::Display, time::{Duration, Instant}
 };
 
 use hashbrown::HashMap;
@@ -171,7 +170,7 @@ impl MctsEngine {
 
             }
             else {
-                ucb1 = turn * out_edge.eval + self.exploration_weight * ((2 * (node.count.ilog(10)) / (out_edge.visits as u32)).isqrt() as f32);
+                ucb1 = turn * out_edge.eval + self.exploration_weight * ((2.0 * (node.count as f32).log10()/E.log10()) / (out_edge.visits as f32)).sqrt();
 
             }
             
@@ -233,10 +232,10 @@ impl MctsEngine {
                 // Update number of times this action was selected for this board
                 out_edge.visits += 1;
                 // Update evaluation of taking action a
-                out_edge.eval = action_eval;
+                out_edge.eval += (action_eval-out_edge.eval)/(out_edge.visits as f32);
             }
             // Computing the sum term for the updated evaluation of the node
-            sum = sum + ((out_edge.visits/updated_node.count) as f32) * out_edge.eval;  
+            sum = sum + ((out_edge.visits as f32)/(updated_node.count as f32)) * out_edge.eval;  
         }
 
         // Updates evaluation for node
