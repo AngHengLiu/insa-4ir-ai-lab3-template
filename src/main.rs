@@ -76,9 +76,9 @@ fn play_game<'a>(
 fn main() {
     let b = Board::init();
 
-    let mut white_engine = MinimaxEngine::new(6);
-    let mut black_engine = MctsEngine::new(0.2);
-    let time_per_move : Duration = Duration::new(0, 100);
+    let mut white_engine = MctsEngine::new(0.5); //MinimaxEngine::new(6);
+    let mut black_engine = MctsEngine::new(0.5); //MinimaxEngine::new(6);
+    let time_per_move : Duration = Duration::new(0, 1000000);
 
     play_game(&b, &mut white_engine, &mut black_engine, time_per_move, true);
 }

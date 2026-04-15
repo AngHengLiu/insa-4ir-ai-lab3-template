@@ -1,6 +1,5 @@
 use std::{
-    fmt::Display,
-    time::{Duration, Instant},
+    f32::consts::E, fmt::Display, time::{Duration, Instant}
 };
 
 use hashbrown::HashMap;
@@ -170,7 +169,8 @@ impl MctsEngine {
                 ucb1 = turn * out_edge.eval + self.exploration_weight * f32::INFINITY;
             }
             else {
-                ucb1 = turn * out_edge.eval + self.exploration_weight * ((2 * (node.count.ilog(10)) / (out_edge.visits as u32)).isqrt() as f32);
+                ucb1 = turn * out_edge.eval + self.exploration_weight * ((2.0 * (node.count as f32).log10()/E.log10()) / (out_edge.visits as f32)).sqrt();
+
             }
             
             if ucb1 >= max_ucb1 {
@@ -221,23 +221,23 @@ impl MctsEngine {
         updated_node.count += 1;
     
         let mut selected_edge_eval : f32 = 0.0;
-        let mut sum : Count = 0;
+        let mut sum : f32 = 0.0;
 
         // Finding which edge to update
-        for mut out_edge in updated_node.out_edges .iter_mut() {
+        for mut out_edge in updated_node.out_edges.iter_mut() {
             if *action == out_edge.action {
                 selected_edge_eval = out_edge.eval ;
                 // Update number of times this action was selected for this board
                 out_edge.visits += 1;
                 // Update evaluation of taking action a
-                out_edge.eval = action_eval;
+                out_edge.eval += (action_eval-out_edge.eval)/(out_edge.visits as f32);
             }
             // Computing the sum term for the updated evaluation of the node
-            sum = sum + out_edge.visits/updated_node.count;  
+            sum = sum + ((out_edge.visits as f32)/(updated_node.count as f32)) * out_edge.eval;  
         }
 
         // Updates evaluation for node
-        updated_node.eval = updated_node.initial_eval/(updated_node.count as f32) + (sum as f32) * selected_edge_eval;
+        updated_node.eval = updated_node.initial_eval/(updated_node.count as f32) + sum;
 
         return updated_node.eval;
     }
@@ -308,7 +308,7 @@ mod test {
 
         println!("{board}");
 
-        for i in 1..=4 {
+        for i in 1..=1000 {
             mcts.playout(&board);
             println!("After {i} playouts: \n{}", mcts.nodes[&board]);
         }
