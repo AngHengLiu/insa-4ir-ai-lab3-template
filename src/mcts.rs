@@ -167,7 +167,6 @@ impl MctsEngine {
 
             if (out_edge.visits == 0 ) {
                 ucb1 = turn * out_edge.eval + self.exploration_weight * f32::INFINITY;
-
             }
             else {
                 ucb1 = turn * out_edge.eval + self.exploration_weight * ((2.0 * (node.count as f32).log10()/E.log10()) / (out_edge.visits as f32)).sqrt();
@@ -179,13 +178,11 @@ impl MctsEngine {
                 best_action = Some(out_edge.action.clone())
            }
         }
-
         best_action
-
     }
 
     /// Performs a playout for this board (s) and returns the (updated) evaluation of the board (Q(s))
-    fn playout(&mut self, board: &Board) -> f32 {
+    fn playout(&mut self, board: &Board) -> (f32, u64) {
 
         let current_board : Board = board.clone();
 
@@ -194,20 +191,21 @@ impl MctsEngine {
             let initial_eval = rollout(&current_board);                                     // Rollout
             let new_node : Node = Node::init(current_board.clone(),initial_eval);           // Create a new node with inital evaluation
             self.nodes.insert(current_board,new_node);
-            return initial_eval;                                                            // Add it to the graph (= expand)
+            return (initial_eval, 0);                                                            // Add it to the graph (= expand)
         } else {
             let best_action : Option<Action> = self.select_ucb1(&current_board);
             let mut new_board : Board;
             let mut action_eval : f32;
             let updated_eval : f32;
+            let nb_playout : u64; 
             match best_action {
                 // If board is not final
                 Some(x) => {new_board = current_board.apply(&x);
-                        action_eval = self.playout(&new_board);                             // Recursive playout
+                        (action_eval, nb_playout) = self.playout(&new_board);                             // Recursive playout
                         updated_eval = self.update_eval(&current_board,&x,action_eval);     // Update evaluation
-                        return updated_eval},
+                        return (updated_eval, nb_playout + 1)},
                 // If board is final
-                None => return self.nodes[board].eval,
+                None => return (self.nodes[board].eval, 0),
             };
         }
     }
@@ -247,22 +245,36 @@ impl MctsEngine {
 }
 
 impl Engine for MctsEngine {
-    fn select(&mut self, board: &Board, deadline: Instant) -> Option<Action> {
+    fn select(&mut self, board: &Board, deadline: Instant, print: bool) -> Option<Action> {
 
+        let mut time_remaining: bool = Instant::now() < deadline; 
         let mut best_action : Option<Action> = None;
+        let mut nb_playout: u64 = 0; 
+        let mut depth_playout: u64 = 0;
 
-        while Instant::now() < deadline {
-            self.playout(board);
+        while time_remaining {
+
+            depth_playout += self.playout(board).1;
+            nb_playout += 1; 
 
             let max_visits = 0; 
             let mut actions = self.nodes.get_mut(board).unwrap();
 
             for out_edge in actions.out_edges .iter_mut() {
-                if out_edge.visits > max_visits {
+                if out_edge.visits >= max_visits {
                     best_action = Some(out_edge.action.clone())
                 }
-            }
+            } 
         }
+
+        if print {
+             let playout_per_sec = nb_playout / deadline.elapsed().as_secs(); 
+            let average_depth = depth_playout / nb_playout;  
+            print!("Number of playouts per second : {} \n", nb_playout / deadline.elapsed().as_secs()); 
+            print!("Average playout depth : {} \n", depth_playout / nb_playout); 
+            //print!("Lenght of the principal variation : {} \n", self.length_pv(board, 0)); 
+        }
+
         best_action
     }
 

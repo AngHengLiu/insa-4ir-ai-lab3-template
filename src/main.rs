@@ -41,6 +41,9 @@ fn play_game<'a>(
     black.clear();
 
     let mut board = board.clone();
+    let mut nb_moves = 0; 
+    let print_every_n_moves = 20; 
+    let mut print = false; 
 
     while !board.is_draw() {
         if verbose {
@@ -52,11 +55,16 @@ fn play_game<'a>(
             board::Color::Black => &mut *black,
         };
         let deadline = Instant::now() + time_per_move;
-        if let Some(action) = engine.select(&board, deadline) {
+        if let Some(action) = engine.select(&board, deadline, print) {
             if verbose {
                 println!("\n action: {action}\n");
             }
             board.apply_mut(&action);
+
+            // print information every n moves 
+            nb_moves += 1; 
+            print = (nb_moves % print_every_n_moves) == 0; 
+
         } else {
             // no possible actions, game is over
             return board;
