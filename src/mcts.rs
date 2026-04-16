@@ -247,12 +247,11 @@ impl MctsEngine {
 impl Engine for MctsEngine {
     fn select(&mut self, board: &Board, deadline: Instant, print: bool) -> Option<Action> {
 
-        let mut time_remaining: bool = Instant::now() < deadline; 
         let mut best_action : Option<Action> = None;
         let mut nb_playout: u64 = 0; 
         let mut depth_playout: u64 = 0;
 
-        while time_remaining {
+        while Instant::now() < deadline {
 
             depth_playout += self.playout(board).1;
             nb_playout += 1; 
@@ -268,10 +267,10 @@ impl Engine for MctsEngine {
         }
 
         if print {
-             let playout_per_sec = nb_playout / deadline.elapsed().as_secs(); 
+            let playout_per_sec = nb_playout / (deadline.elapsed().as_micros() as u64) * 1000000; 
             let average_depth = depth_playout / nb_playout;  
-            print!("Number of playouts per second : {} \n", nb_playout / deadline.elapsed().as_secs()); 
-            print!("Average playout depth : {} \n", depth_playout / nb_playout); 
+            print!("Number of playouts per second : {} \n", playout_per_sec); 
+            print!("Average playout depth : {} \n", average_depth); 
             //print!("Lenght of the principal variation : {} \n", self.length_pv(board, 0)); 
         }
 
