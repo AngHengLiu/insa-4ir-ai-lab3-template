@@ -147,30 +147,32 @@ impl MctsEngine {
 }
 
 impl MctsEngine {
-    /// Takes initial board and returns the length of the principal variation
+    /// Takes board and returns the length of the principal variation
     pub fn length_pv(&self, board: &Board, curr_length: u64) -> u64 {
-        let mut max_visits : u64 = 0; //Threshold
-        let mut length = curr_length;
-        let mut current_node = &self.nodes[board];
-        let mut next_board : Board;
-        let mut chosen_out_edge : &OutEdge = &current_node.out_edges[0]; // Initialise with first element
+    let mut max_visits: u64 = 0;
+    let mut length = curr_length;
+    let current_node = &self.nodes[board];
+    let mut chosen_out_edge: Option<&OutEdge> = None;
 
-        // Find edge with highest visit count -> to be chosen
-        for out_edge in current_node.out_edges.iter() {
-            if out_edge.visits > max_visits {
-                chosen_out_edge = out_edge;
-                max_visits = out_edge.visits;
+    // Find edge with highest visit count -> to be chosen
+    for out_edge in current_node.out_edges.iter() {
+        if out_edge.visits > max_visits {
+            chosen_out_edge = Some(out_edge);
+            max_visits = out_edge.visits;
+        }
+    }
+
+    match chosen_out_edge {
+        Some(chosen_out_edge) => {
+            if max_visits >= 100 {
+                let next_board = board.apply(&chosen_out_edge.action); // PB ICI
+                self.length_pv(&next_board, length + 1)
+            } else {
+                length
             }
         }
-
-        // Return if threshold not attained 
-        if max_visits >= 100 {
-            next_board = board.apply(&chosen_out_edge.action);
-            length += 1;
-            self.length_pv(&next_board,length)
-        } else {
-            return length;
-        }
+        None => length,
+    }
     }
 
     /// Selects the best action according to UCB1, or `None` if no action is available.
