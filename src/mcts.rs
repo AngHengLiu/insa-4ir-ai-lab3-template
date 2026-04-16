@@ -295,11 +295,11 @@ impl Engine for MctsEngine {
         }
 
         if print {
-            let playout_per_sec = nb_playout / (deadline.elapsed().as_micros() as u64) * 1000000; 
+            let playout_per_sec = (nb_playout as f64) / (deadline.elapsed().as_micros() as f64) * 1000000.0; 
             let average_depth = depth_playout / nb_playout;  
             print!("Number of playouts per second : {} \n", playout_per_sec); 
             print!("Average playout depth : {} \n", average_depth); 
-            //print!("Lenght of the principal variation : {} \n", self.length_pv(board, 0)); 
+            print!("Lenght of the principal variation : {} \n", self.length_pv(board, 0)); 
         }
 
         best_action
