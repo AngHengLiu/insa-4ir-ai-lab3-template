@@ -1,5 +1,5 @@
 use std::{
-    f32::consts::E, fmt::Display, time::{Duration, Instant}
+    f32::{self, consts::E}, fmt::Display, time::{Duration, Instant}
 };
 
 use hashbrown::HashMap;
@@ -179,32 +179,39 @@ impl MctsEngine {
         debug_assert!(self.nodes.contains_key(board));
         
         let mut best_action : Option<Action> = None;
-        let mut max_ucb1 : f32 = 0.0; 
+        let mut max_ucb1 : f32; 
         let node : &Node = &self.nodes[board];
 
         let turn: f32;
         if board.turn == Color::White {
             turn = 1.0; 
+            max_ucb1 = 0.0;
         } else {
             turn = -1.0; 
+            max_ucb1 = f32::INFINITY; 
         }
 
         for out_edge in &self.nodes[board].out_edges {
 
             let ucb1 : f32 ; 
-
             if (out_edge.visits == 0 ) {
                 ucb1 = turn * out_edge.eval + self.exploration_weight * f32::INFINITY;
             }
             else {
                 ucb1 = turn * out_edge.eval + self.exploration_weight * ((2.0 * (node.count as f32).log10()/E.log10()) / (out_edge.visits as f32)).sqrt();
-
             }
             
-            if ucb1 >= max_ucb1 {
-                max_ucb1 = ucb1; 
-                best_action = Some(out_edge.action.clone())
-           }
+            if board.turn == Color::White {
+                if ucb1 >= max_ucb1 {
+                    max_ucb1 = ucb1; 
+                    best_action = Some(out_edge.action.clone())
+                }
+            } else {
+                if ucb1 <= max_ucb1 {
+                    max_ucb1 = ucb1; 
+                    best_action = Some(out_edge.action.clone())
+                }
+            }
         }
         best_action
     }

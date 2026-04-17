@@ -80,7 +80,10 @@ fn main() {
     let mut black_engine = MctsEngine::new(0.5); //MinimaxEngine::new(6);
     let time_per_move : Duration = Duration::new(0, 1000000);
 
-    play_game(&b, &mut white_engine, &mut black_engine, time_per_move, true);
+    let final_board = play_game(&b, &mut white_engine, &mut black_engine, time_per_move, true);
+
+    let white_score = white_score(&final_board);
+    println!("White's score: {white_score}");
 }
 
 #[allow(unused)]
