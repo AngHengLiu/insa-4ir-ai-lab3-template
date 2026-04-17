@@ -165,12 +165,12 @@ impl MctsEngine {
         Some(chosen_out_edge) => {
             if max_visits >= 100 {
                 let next_board = board.apply(&chosen_out_edge.action); // PB ICI
-                self.length_pv(&next_board, length + 1)
+                return self.length_pv(&next_board, length + 1)
             } else {
-                length
+                return length
             }
         }
-        None => length,
+        None => return length,
     }
     }
 
