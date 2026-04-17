@@ -34,7 +34,7 @@ impl MinimaxEngine {
 }
 
 impl Engine for MinimaxEngine {
-    fn select(&mut self, board: &Board, _deadline: Instant, print: bool) -> Option<Action> {
+    fn select(&mut self, board: &Board, _deadline: Instant, print: bool, eval_function: u32) -> Option<Action> {
         let actions = board.actions();
         let mut best_value = f32::MIN;
         let mut best_action = None;

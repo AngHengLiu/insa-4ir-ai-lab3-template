@@ -55,7 +55,7 @@ fn play_game<'a>(
             board::Color::Black => &mut *black,
         };
         let deadline = Instant::now() + time_per_move;
-        if let Some(action) = engine.select(&board, deadline, print) {
+        if let Some(action) = engine.select(&board, deadline, print, 0) {
             if verbose {
                 println!("\n action: {action}\n");
             }

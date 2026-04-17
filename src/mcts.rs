@@ -217,13 +217,24 @@ impl MctsEngine {
     }
 
     /// Performs a playout for this board (s) and returns the (updated) evaluation of the board (Q(s))
-    fn playout(&mut self, board: &Board) -> (f32, u64) {
+    fn playout(&mut self, board: &Board, nb_rollout: u32) -> (f32, u64) {
 
         let current_board : Board = board.clone();
 
         // If board not already "rollouted"
-        if !self.nodes.contains_key(&current_board) {                                    
-            let initial_eval = rollout(&current_board);                                     // Rollout
+        if !self.nodes.contains_key(&current_board) {   
+            let initial_eval;    
+            if nb_rollout == 1 {
+                initial_eval = rollout(&current_board);  // Rollout
+            }  else  {
+                let mut i = 0; 
+                let mut sum_eval = 0.0; 
+                while i < nb_rollout {
+                    sum_eval += rollout(&current_board);
+                    i += 1; 
+                }
+                initial_eval = sum_eval / (nb_rollout as f32); 
+            }                                                          
             let new_node : Node = Node::init(current_board.clone(),initial_eval);           // Create a new node with inital evaluation
             self.nodes.insert(current_board,new_node);
             return (initial_eval, 0);                                                            // Add it to the graph (= expand)
@@ -236,7 +247,7 @@ impl MctsEngine {
             match best_action {
                 // If board is not final
                 Some(x) => {new_board = current_board.apply(&x);
-                        (action_eval, nb_playout) = self.playout(&new_board);                             // Recursive playout
+                        (action_eval, nb_playout) = self.playout(&new_board, nb_rollout);                             // Recursive playout
                         updated_eval = self.update_eval(&current_board,&x,action_eval);     // Update evaluation
                         return (updated_eval, nb_playout + 1)},
                 // If board is final
@@ -280,7 +291,10 @@ impl MctsEngine {
 }
 
 impl Engine for MctsEngine {
-    fn select(&mut self, board: &Board, deadline: Instant, print: bool) -> Option<Action> {
+    // eval_function : 
+    //  - 0 : evaluation function used in Minimax
+    //  - other : number of rollouts used to do the evaluation. Example : to do 1 rollout, put 1. 
+    fn select(&mut self, board: &Board, deadline: Instant, print: bool, eval_function: u32) -> Option<Action> {
 
         let mut best_action : Option<Action> = None;
         let mut nb_playout: u64 = 0; 
@@ -288,7 +302,12 @@ impl Engine for MctsEngine {
 
         while Instant::now() < deadline {
 
-            depth_playout += self.playout(board).1;
+            if eval_function == 0 {
+
+            } else {
+                depth_playout += self.playout(board, eval_function).1;
+            }
+            
             nb_playout += 1; 
 
             let max_visits = 0; 
@@ -343,7 +362,7 @@ mod test {
         println!("{board}");
 
         for i in 1..=1000 {
-            mcts.playout(&board);
+            mcts.playout(&board, 1);
             println!("After {i} playouts: \n{}", mcts.nodes[&board]);
         }
         println!("{board}");
