@@ -74,16 +74,47 @@ fn play_game<'a>(
 }
 
 fn main() {
+    let num_games = 100;
+    let mut current_game_num: i32 = 0;
+    let mut w_score: f32 = 0.;
+    let mut tot_wins_white = 0.;
+    let mut tot_playout_depth_start: u64;
+    let mut tot_playout_rate_start: f64;
+    let mut tot_principal_var_start: u64;
+
+    let mut tot_playout_depth_middle: u64;
+    let mut tot_playout_rate_middle: f64;
+    let mut tot_principal_var_middle: u64;
+
+    let mut tot_playout_depth_end: u64;
+    let mut tot_playout_rate_end: f64;
+    let mut tot_principal_var_end: u64;
+
+
     let b = Board::init();
 
-    let mut white_engine = MctsEngine::new(0.5); //MinimaxEngine::new(6);
+    let mut white_engine = MinimaxEngine::new(1); //MinimaxEngine::new(6);
     let mut black_engine = MctsEngine::new(0.5); //MinimaxEngine::new(6);
     let time_per_move : Duration = Duration::new(0, 1000000);
 
-    let final_board = play_game(&b, &mut white_engine, &mut black_engine, time_per_move, true);
+    let mut i = 0;
+    while i != num_games {
+        let final_board = play_game(&b, &mut white_engine, &mut black_engine, time_per_move, false);
+        w_score = white_score(&final_board);
+        println!("White's score: {w_score}");
+        if w_score == 1.0 {
+            tot_wins_white += w_score;
+        }
+        current_game_num += 1;
+        println!("White has so far won {tot_wins_white} out of {current_game_num} games");
+        white_engine.clear();
+        black_engine.clear();
+        i += 1;
+    }
 
-    let white_score = white_score(&final_board);
-    println!("White's score: {white_score}");
+    let percentage_white_wins = (tot_wins_white/num_games as f32)*100.0;
+
+    println!("White has won {percentage_white_wins}% of the games");
 }
 
 #[allow(unused)]
