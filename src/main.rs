@@ -43,7 +43,7 @@ fn play_game<'a>(
     let mut board = board.clone();
     let mut nb_moves = 0; 
     let print_every_n_moves = 20; 
-    let mut print = false; 
+    let mut print = true; 
 
     while !board.is_draw() {
         if verbose {
