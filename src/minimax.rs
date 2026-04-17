@@ -54,7 +54,7 @@ impl Engine for MinimaxEngine {
     }
 }
 
-fn minimax_eval(board: &Board, remaining_depth: u32) -> f32 {
+pub fn minimax_eval(board: &Board, remaining_depth: u32) -> f32 {
     if remaining_depth == 0 {
         return heuristic_evaluation(board);
     }

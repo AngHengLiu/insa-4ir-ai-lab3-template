@@ -7,6 +7,7 @@ use itertools::Itertools;
 use rand::seq::IndexedRandom;
 
 use crate::engine::Engine;
+use crate::minimax::minimax_eval;  
 
 use super::board::*;
 
@@ -309,7 +310,7 @@ impl Engine for MctsEngine {
             if self.eval_function == 0 {
                 depth_playout += self.playout(board, self.value_eval).1;
             } else if self.eval_function == 1 {
-                
+                minimax_eval(board, self.value_eval); 
             } else {
                 panic!("Incorrect evaluation function. Please, choose a value between 0 and 1 "); 
             }
