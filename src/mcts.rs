@@ -135,12 +135,19 @@ pub struct MctsEngine {
     nodes: HashMap<Board, Node>,
     /// weight given to the exploration term in UCB1
     pub exploration_weight: f32,
+    /// Two evaluation functions are available : 
+    ///     - 0 : average of `value_eval` rollouts
+    ///     - 1 : minimax evaluation with a `value_eval` depth
+    pub eval_function: u32, 
+    pub value_eval: u32,
 }
 impl MctsEngine {
-    pub fn new(exploration_weight: f32) -> MctsEngine {
+    pub fn new(exploration_weight: f32, eval_function: u32, value_eval: u32) -> MctsEngine {
         MctsEngine {
             nodes: HashMap::new(),
             exploration_weight,
+            eval_function, 
+            value_eval
         }
     }
 }
@@ -291,10 +298,7 @@ impl MctsEngine {
 }
 
 impl Engine for MctsEngine {
-    // eval_function : 
-    //  - 0 : evaluation function used in Minimax
-    //  - other : number of rollouts used to do the evaluation. Example : to do 1 rollout, put 1. 
-    fn select(&mut self, board: &Board, deadline: Instant, print: bool, eval_function: u32) -> Option<Action> {
+    fn select(&mut self, board: &Board, deadline: Instant, print: bool) -> Option<Action> {
 
         let mut best_action : Option<Action> = None;
         let mut nb_playout: u64 = 0; 
@@ -302,10 +306,12 @@ impl Engine for MctsEngine {
 
         while Instant::now() < deadline {
 
-            if eval_function == 0 {
-
+            if self.eval_function == 0 {
+                depth_playout += self.playout(board, self.value_eval).1;
+            } else if self.eval_function == 1 {
+                
             } else {
-                depth_playout += self.playout(board, eval_function).1;
+                panic!("Incorrect evaluation function. Please, choose a value between 0 and 1 "); 
             }
             
             nb_playout += 1; 
@@ -357,7 +363,7 @@ mod test {
             8 w w w .",
             Color::White,
         );
-        let mut mcts = MctsEngine::new(1.);
+        let mut mcts = MctsEngine::new(1., 0, 1);
 
         println!("{board}");
 
