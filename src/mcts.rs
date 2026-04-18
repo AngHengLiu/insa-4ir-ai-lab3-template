@@ -309,33 +309,43 @@ impl Engine for MctsEngine {
 
             if self.eval_function == 0 {
                 depth_playout += self.playout(board, self.value_eval).1;
+                nb_playout += 1; 
+
+                let max_visits = 0; 
+                let mut actions = self.nodes.get_mut(board).unwrap();
+
+                for out_edge in actions.out_edges .iter_mut() {
+                    if out_edge.visits >= max_visits {
+                        best_action = Some(out_edge.action.clone())
+                    }
+                } 
+
+                if print {
+                    let playout_per_sec = (nb_playout as f64) / (deadline.elapsed().as_micros() as f64) * 1000000.0; 
+                    let average_depth = depth_playout / nb_playout;  
+                    print!("Number of playouts per second : {} \n", playout_per_sec);                     print!("Average playout depth : {} \n", average_depth); 
+                    print!("Lenght of the principal variation : {} \n", self.length_pv(board, 0)); 
+                }
+
             } else if self.eval_function == 1 {
-                minimax_eval(board, self.value_eval); 
+                
+                let actions = board.actions();
+                let mut best_value = f32::MIN;
+                for a in actions {
+                    let result = board.apply(&a);
+                    let value = -minimax_eval(&result, self.value_eval);
+                    if value > best_value {
+                        best_value = value;
+                        best_action = Some(a);
+                    }
+                }
             } else {
                 panic!("Incorrect evaluation function. Please, choose a value between 0 and 1 "); 
             }
+        }   
             
-            nb_playout += 1; 
-
-            let max_visits = 0; 
-            let mut actions = self.nodes.get_mut(board).unwrap();
-
-            for out_edge in actions.out_edges .iter_mut() {
-                if out_edge.visits >= max_visits {
-                    best_action = Some(out_edge.action.clone())
-                }
-            } 
-        }
-
-        if print {
-            let playout_per_sec = (nb_playout as f64) / (deadline.elapsed().as_micros() as f64) * 1000000.0; 
-            let average_depth = depth_playout / nb_playout;  
-            print!("Number of playouts per second : {} \n", playout_per_sec); 
-            print!("Average playout depth : {} \n", average_depth); 
-            print!("Lenght of the principal variation : {} \n", self.length_pv(board, 0)); 
-        }
-
         best_action
+        
     }
 
     fn clear(&mut self) {
