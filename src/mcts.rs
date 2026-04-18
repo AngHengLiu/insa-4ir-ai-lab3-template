@@ -323,7 +323,8 @@ impl Engine for MctsEngine {
                 if print {
                     let playout_per_sec = (nb_playout as f64) / (deadline.elapsed().as_micros() as f64) * 1000000.0; 
                     let average_depth = depth_playout / nb_playout;  
-                    print!("Number of playouts per second : {} \n", playout_per_sec);                     print!("Average playout depth : {} \n", average_depth); 
+                    print!("Number of playouts per second : {} \n", playout_per_sec);                     
+                    print!("Average playout depth : {} \n", average_depth); 
                     print!("Lenght of the principal variation : {} \n", self.length_pv(board, 0)); 
                 }
 
@@ -331,14 +332,26 @@ impl Engine for MctsEngine {
                 
                 let actions = board.actions();
                 let mut best_value = f32::MIN;
+                let mut nb_minimax = 0;
+
                 for a in actions {
                     let result = board.apply(&a);
                     let value = -minimax_eval(&result, self.value_eval);
+                    nb_minimax += 1; 
                     if value > best_value {
                         best_value = value;
                         best_action = Some(a);
                     }
                 }
+
+                if print {
+                    let minimax_per_sec = (nb_minimax as f64) / (deadline.elapsed().as_micros() as f64) * 1000000.0; 
+                    let average_depth = depth_playout / nb_playout;  
+                    print!("Number of minimax per second : {} \n", minimax_per_sec);                     
+                    print!("Minimax depth : {} \n", self.value_eval); 
+                    print!("Lenght of the principal variation : {} \n", self.length_pv(board, 0)); 
+                }
+
             } else {
                 panic!("Incorrect evaluation function. Please, choose a value between 0 and 1 "); 
             }
