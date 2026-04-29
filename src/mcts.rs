@@ -7,6 +7,7 @@ use itertools::Itertools;
 use rand::seq::IndexedRandom;
 
 use crate::engine::Engine;
+use crate::minimax::minimax_eval;  
 
 use super::board::*;
 
@@ -155,12 +156,19 @@ pub struct MctsEngine {
     nodes: HashMap<Board, Node>,
     /// weight given to the exploration term in UCB1
     pub exploration_weight: f32,
+    /// Two evaluation functions are available : 
+    ///     - 0 : average of `value_eval` rollouts
+    ///     - 1 : minimax evaluation with a `value_eval` depth
+    pub eval_function: u32, 
+    pub value_eval: u32,
 }
 impl MctsEngine {
-    pub fn new(exploration_weight: f32) -> MctsEngine {
+    pub fn new(exploration_weight: f32, eval_function: u32, value_eval: u32) -> MctsEngine {
         MctsEngine {
             nodes: HashMap::new(),
             exploration_weight,
+            eval_function, 
+            value_eval
         }
     }
 }
@@ -244,13 +252,24 @@ impl MctsEngine {
     }
 
     /// Performs a playout for this board (s) and returns the (updated) evaluation of the board (Q(s))
-    fn playout(&mut self, board: &Board) -> (f32, u64) {
+    fn playout(&mut self, board: &Board, nb_rollout: u32) -> (f32, u64) {
 
         let current_board : Board = board.clone();
 
         // If board not already "rollouted"
-        if !self.nodes.contains_key(&current_board) {                                    
-            let initial_eval = rollout(&current_board);                                     // Rollout
+        if !self.nodes.contains_key(&current_board) {   
+            let initial_eval;    
+            if nb_rollout == 1 {
+                initial_eval = rollout(&current_board);  // Rollout
+            }  else  {
+                let mut i = 0; 
+                let mut sum_eval = 0.0; 
+                while i < nb_rollout {
+                    sum_eval += rollout(&current_board);
+                    i += 1; 
+                }
+                initial_eval = sum_eval / (nb_rollout as f32); 
+            }                                                          
             let new_node : Node = Node::init(current_board.clone(),initial_eval);           // Create a new node with inital evaluation
             self.nodes.insert(current_board,new_node);
             return (initial_eval, 0);                                                            // Add it to the graph (= expand)
@@ -263,7 +282,7 @@ impl MctsEngine {
             match best_action {
                 // If board is not final
                 Some(x) => {new_board = current_board.apply(&x);
-                        (action_eval, nb_playout) = self.playout(&new_board);                             // Recursive playout
+                        (action_eval, nb_playout) = self.playout(&new_board, nb_rollout);                             // Recursive playout
                         updated_eval = self.update_eval(&current_board,&x,action_eval);     // Update evaluation
                         return (updated_eval, nb_playout + 1)},
                 // If board is final
@@ -320,17 +339,39 @@ impl Engine for MctsEngine {
 
         while Instant::now() < deadline {
 
-            depth_playout += self.playout(board).1;
             nb_playout += 1; 
 
-            let max_visits = 0; 
-            let mut actions = self.nodes.get_mut(board).unwrap();
+            if self.eval_function == 0 {
+                depth_playout += self.playout(board, self.value_eval).1;
 
-            for out_edge in actions.out_edges .iter_mut() {
-                if out_edge.visits >= max_visits {
-                    best_action = Some(out_edge.action.clone())
+                let mut max_visits = 0; 
+                let mut actions = self.nodes.get_mut(board).unwrap();
+
+                for out_edge in actions.out_edges .iter_mut() {
+                    if out_edge.visits >= max_visits {
+                        best_action = Some(out_edge.action.clone());
+                        max_visits = out_edge.visits; 
+                    }
+                } 
+
+            } else if self.eval_function == 1 {
+                
+                let actions = board.actions();
+                let mut best_value = f32::MIN;
+                depth_playout += (self.value_eval as u64);
+
+                 for a in actions {
+                    let result = board.apply(&a);
+                    let value = -minimax_eval(&result, self.value_eval);
+                    if value > best_value {
+                        best_value = value;
+                        best_action = Some(a);
+                    }
                 }
-            } 
+
+            } else {
+                panic!("Incorrect evaluation function. Please, choose a value between 0 and 1 ");
+            }
         }
 
         let elapsed = start.elapsed().as_micros() as f64;
@@ -343,6 +384,7 @@ impl Engine for MctsEngine {
         }
         let output = Output::create(best_action,metrics,None);
         return output;
+        
     }
 
     fn clear(&mut self) {
@@ -371,12 +413,12 @@ mod test {
             8 w w w .",
             Color::White,
         );
-        let mut mcts = MctsEngine::new(1.);
+        let mut mcts = MctsEngine::new(1., 0, 1);
 
         println!("{board}");
 
         for i in 1..=1000 {
-            mcts.playout(&board);
+            mcts.playout(&board, 1);
             println!("After {i} playouts: \n{}", mcts.nodes[&board]);
         }
         println!("{board}");
