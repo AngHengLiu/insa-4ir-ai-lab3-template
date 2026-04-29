@@ -10,6 +10,9 @@ use crate::engine::Engine;
 
 use super::board::*;
 
+// Function that takes playout depth and playout per second, for one iteration and returns the same (for main)
+//pub fn metrics_mcts()
+
 /// Function that evaluates a final board (draw, or no remaning actions for the current player).
 pub fn white_score(board: &Board) -> f32 {
     debug_assert!(
@@ -55,6 +58,23 @@ pub fn rollout(board: &Board) -> f32 {
 
 /// Alias type to repesent a count of selections.
 pub type Count = u64;
+
+/// Return of the select function 
+pub struct Output {
+    pub action: Option<Action>,
+    pub metrics: [[f64;2];3],
+    pub board: Option<Board>,
+}
+
+impl Output {
+    pub fn create(action: Option<Action>, metrics: [[f64;2];3], board: Option<Board>) -> Output {
+        Output {
+            action: action,
+            metrics: metrics,
+            board: board
+        }
+    }
+}
 
 /// Node of the MCTS graph
 struct Node {
@@ -179,18 +199,19 @@ impl MctsEngine {
         debug_assert!(self.nodes.contains_key(board));
         
         let mut best_action : Option<Action> = None;
-        let mut max_ucb1 : f32; 
+        let mut max_ucb1 : f32 = 0.0;
         let node : &Node = &self.nodes[board];
 
         let turn: f32;
         if board.turn == Color::White {
             turn = 1.0; 
-            max_ucb1 = 0.0;
+            //max_ucb1 = 0.0;
         } else {
             turn = -1.0; 
-            max_ucb1 = f32::INFINITY; 
+            //max_ucb1 = f32::INFINITY; 
         }
 
+        // Calculate the ucb1 for each node
         for out_edge in &self.nodes[board].out_edges {
 
             let ucb1 : f32 ; 
@@ -199,6 +220,12 @@ impl MctsEngine {
             }
             else {
                 ucb1 = turn * out_edge.eval + self.exploration_weight * ((2.0 * (node.count as f32).log10()/E.log10()) / (out_edge.visits as f32)).sqrt();
+            }
+
+            // Might not be helpful
+            if ucb1 == f32::INFINITY {
+                best_action = Some(out_edge.action.clone());
+                return best_action;
             }
             
             if board.turn == Color::White {
@@ -280,11 +307,16 @@ impl MctsEngine {
 }
 
 impl Engine for MctsEngine {
-    fn select(&mut self, board: &Board, deadline: Instant, print: bool) -> Option<Action> {
-
+    fn select(&mut self, board: &Board, deadline: Instant, print: bool) -> Output {
+        let start = Instant::now();
         let mut best_action : Option<Action> = None;
         let mut nb_playout: u64 = 0; 
         let mut depth_playout: u64 = 0;
+        let mut playout_per_sec : f64 = 0.;
+        let mut average_depth : f64 = 0.;
+        // Array of arrays containing the performance measures at the start, in the middle and in the end
+        let mut metrics : [[f64;2];3] = [[0.0;2];3];
+        let mut print_num =0;
 
         while Instant::now() < deadline {
 
@@ -301,15 +333,16 @@ impl Engine for MctsEngine {
             } 
         }
 
-        if print {
-            let playout_per_sec = (nb_playout as f64) / (deadline.elapsed().as_micros() as f64) * 1000000.0; 
-            let average_depth = depth_playout / nb_playout;  
-            print!("Number of playouts per second : {} \n", playout_per_sec); 
-            print!("Average playout depth : {} \n", average_depth); 
-            print!("Lenght of the principal variation : {} \n", self.length_pv(board, 0)); 
-        }
+        let elapsed = start.elapsed().as_micros() as f64;
+        let playout_per_sec = (nb_playout as f64 / elapsed) * 1000000.0;
+        let average_depth = depth_playout as f64 / nb_playout as f64;
 
-        best_action
+        if print {
+            metrics[0][0] = playout_per_sec;
+            metrics[0][1] = average_depth;
+        }
+        let output = Output::create(best_action,metrics,None);
+        return output;
     }
 
     fn clear(&mut self) {

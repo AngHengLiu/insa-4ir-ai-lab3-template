@@ -35,17 +35,21 @@ fn play_game<'a>(
     black: &'a mut dyn Engine,
     time_per_move: Duration,
     verbose: bool,
-) -> Board {
+) -> Output {
     // erase engines history
     white.clear();
     black.clear();
 
     let mut board = board.clone();
     let mut nb_moves = 0; 
-    let print_every_n_moves = 20; 
-    let mut print = true; 
+    let print_every_n_moves = 5; 
+    let mut print = true;
+    let mut output: Output = Output::create(None,[[0.0;2];3],None); 
+    let mut selected_output = Output::create(None,[[0.0;2];3],None); 
+    let mut game_metrics = [[0.0;2];3];
+    let mut metric_index = 0;
 
-    while !board.is_draw() {
+    while !(board.is_draw() || board.actions().is_empty()) {
         if verbose {
             println!("{board}");
         }
@@ -54,67 +58,101 @@ fn play_game<'a>(
             board::Color::White => &mut *white,
             board::Color::Black => &mut *black,
         };
+
+        nb_moves += 1; 
+        print = (nb_moves % print_every_n_moves) == 0; 
         let deadline = Instant::now() + time_per_move;
-        if let Some(action) = engine.select(&board, deadline, print) {
+        selected_output = engine.select(&board,deadline,print);
+
+        if print && board.turn == board::Color::Black && metric_index < 3 {
+            game_metrics[metric_index][0] = selected_output.metrics[0][0];
+            game_metrics[metric_index][1] = selected_output.metrics[0][1];
+            metric_index += 1;
+        }
+        if let Some(action) = selected_output.action {
             if verbose {
                 println!("\n action: {action}\n");
             }
             board.apply_mut(&action);
-
-            // print information every n moves 
-            nb_moves += 1; 
-            print = (nb_moves % print_every_n_moves) == 0; 
-
         } else {
             // no possible actions, game is over
-            return board;
+            output = Output::create(None, game_metrics,Some(board));
+            return output;
         }
     }
-    board
+    output = Output::create(None,game_metrics,Some(board));
+    return output;
 }
 
 fn main() {
     let num_games = 100;
     let mut current_game_num: i32 = 0;
+    let mut tot_rate = 0.;
+    let mut tot_depth = 0.;
+
     let mut w_score: f32 = 0.;
     let mut tot_wins_white = 0.;
-    let mut tot_playout_depth_start: u64;
-    let mut tot_playout_rate_start: f64;
-    let mut tot_principal_var_start: u64;
 
-    let mut tot_playout_depth_middle: u64;
-    let mut tot_playout_rate_middle: f64;
-    let mut tot_principal_var_middle: u64;
+    let mut tot_depth_start: f64 = 0.;
+    let mut tot_rate_start: f64 = 0.;
+    //let mut tot_principal_var_start: u64 = 0;
 
-    let mut tot_playout_depth_end: u64;
-    let mut tot_playout_rate_end: f64;
-    let mut tot_principal_var_end: u64;
+    let mut tot_depth_middle: f64 = 0.;
+    let mut tot_rate_middle: f64 = 0.;
+    //let mut tot_principal_var_middle: u64 = 0;
 
+    let mut tot_depth_end: f64 = 0.;
+    let mut tot_rate_end: f64 = 0.;
+    //let mut tot_principal_var_end: u64 = 0;
+
+    let mut final_board: Output;
 
     let b = Board::init();
 
     let mut white_engine = MinimaxEngine::new(1); //MinimaxEngine::new(6);
-    let mut black_engine = MctsEngine::new(0.5); //MinimaxEngine::new(6);
-    let time_per_move : Duration = Duration::new(0, 1000000);
+    let mut black_engine = MctsEngine::new(5.); //MinimaxEngine::new(6);
+    let time_per_move : Duration = Duration::new(0, 10000000);
 
     let mut i = 0;
     while i != num_games {
-        let final_board = play_game(&b, &mut white_engine, &mut black_engine, time_per_move, false);
-        w_score = white_score(&final_board);
+        final_board = play_game(&b, &mut white_engine, &mut black_engine, time_per_move, false);
+        w_score = white_score(&final_board.board.unwrap());
         println!("White's score: {w_score}");
         if w_score == 1.0 {
             tot_wins_white += w_score;
         }
         current_game_num += 1;
+
+        // Metrics
         println!("White has so far won {tot_wins_white} out of {current_game_num} games");
-        white_engine.clear();
-        black_engine.clear();
+        tot_rate_start += final_board.metrics[0][0];
+        tot_depth_start += final_board.metrics[0][1];
+        tot_rate_middle += final_board.metrics[1][0];
+        tot_depth_middle += final_board.metrics[1][1];
+        tot_rate_end += final_board.metrics[2][0];
+        tot_depth_end += final_board.metrics[2][1];
+
         i += 1;
     }
 
     let percentage_white_wins = (tot_wins_white/num_games as f32)*100.0;
+    let avrg_rate_start = (tot_rate_start/num_games as f64);
+    let avrg_depth_start = (tot_depth_start/num_games as f64);
+    let avrg_rate_middle = (tot_rate_middle/num_games as f64);
+    let avrg_depth_middle = (tot_depth_middle/num_games as f64);
+    let avrg_rate_end = (tot_rate_end/num_games as f64);
+    let avrg_depth_end = (tot_depth_end/num_games as f64);
 
     println!("White has won {percentage_white_wins}% of the games");
+
+    println!("Average playouts per second in the beginning: {avrg_rate_start}");
+    println!("Average of average playout depth in the beginning: {avrg_depth_start}");
+
+    println!("Average playouts per second in the middle: {avrg_rate_middle}");
+    println!("Average of average playout depth in the middle: {avrg_depth_middle}");
+
+    println!("Average playouts per second in the end: {avrg_rate_end}");
+    println!("Average of average playout depth in the end: {avrg_depth_end}");
 }
 
 #[allow(unused)]
@@ -129,7 +167,7 @@ fn example_game() {
     // let mut white_engine = MctsEngine::new(1.);
     let mut black_engine = MinimaxEngine::new(6);
 
-    let final_board = play_game(
+    let final_output = play_game(
         &board,
         &mut white_engine,
         &mut black_engine,
@@ -137,6 +175,7 @@ fn example_game() {
         true,
     );
 
+    let final_board : Board = final_output.board.unwrap();
     println!("Final board: \n{final_board}");
 
     // Printing white's score

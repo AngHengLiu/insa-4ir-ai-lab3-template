@@ -2,6 +2,7 @@ use core::f32;
 use std::time::Instant;
 
 use crate::engine::Engine;
+use crate::mcts::{Output};
 
 use super::board::*;
 
@@ -34,7 +35,7 @@ impl MinimaxEngine {
 }
 
 impl Engine for MinimaxEngine {
-    fn select(&mut self, board: &Board, _deadline: Instant, print: bool) -> Option<Action> {
+    fn select(&mut self, board: &Board, _deadline: Instant, print: bool) -> Output {
         let actions = board.actions();
         let mut best_value = f32::MIN;
         let mut best_action = None;
@@ -46,7 +47,8 @@ impl Engine for MinimaxEngine {
                 best_action = Some(a);
             }
         }
-        best_action
+        let output= Output::create(best_action,[[0.0;2];3],None);
+        return output;
     }
 
     fn clear(&mut self) {
