@@ -64,7 +64,7 @@ fn play_game<'a>(
         let deadline = Instant::now() + time_per_move;
         selected_output = engine.select(&board,deadline,print);
 
-        if print && board.turn == board::Color::Black && metric_index < 3 {
+        if print && board.turn == board::Color::Black && metric_index < 3 { // IL FAUT MODIFIER COLEUR DU MCTS ICI
             game_metrics[metric_index][0] = selected_output.metrics[0][0];
             game_metrics[metric_index][1] = selected_output.metrics[0][1];
             metric_index += 1;
