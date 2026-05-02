@@ -63,7 +63,7 @@ pub type Count = u64;
 /// Return of the select function 
 pub struct Output {
     pub action: Option<Action>,
-    pub metrics: [[f64;2];3],
+    pub metrics: [[f64;2];3], // Matrix of 3 lines of  2 values that represents different measures at the beginning, the middle and the end of the game. 
     pub board: Option<Board>,
 }
 
@@ -251,8 +251,8 @@ impl MctsEngine {
         best_action
     }
 
-    /// Performs a playout for this board (s) and returns the (updated) evaluation of the board (Q(s))
-    fn playout(&mut self, board: &Board, nb_rollout: u32) -> (f32, u64) {
+    /// Performs a playout for this board (s) and returns the (updated) evaluation of the board (Q(s)) and the depth of the playout s
+    fn playout(&mut self, board: &Board, nb_rollout: u32, depth: u64) -> (f32, u64) {
 
         let current_board : Board = board.clone();
 
@@ -270,9 +270,9 @@ impl MctsEngine {
                 }
                 initial_eval = sum_eval / (nb_rollout as f32); 
             }                                                          
-            let new_node : Node = Node::init(current_board.clone(),initial_eval);           // Create a new node with inital evaluation
+            let new_node : Node = Node::init(current_board.clone(),initial_eval);     // Create a new node with inital evaluation
             self.nodes.insert(current_board,new_node);
-            return (initial_eval, 0);                                                            // Add it to the graph (= expand)
+            return (initial_eval, depth);                                                 // Add it to the graph (= expand)
         } else {
             let best_action : Option<Action> = self.select_ucb1(&current_board);
             let mut new_board : Board;
@@ -282,11 +282,11 @@ impl MctsEngine {
             match best_action {
                 // If board is not final
                 Some(x) => {new_board = current_board.apply(&x);
-                        (action_eval, nb_playout) = self.playout(&new_board, nb_rollout);                             // Recursive playout
+                        (action_eval, nb_playout) = self.playout(&new_board, nb_rollout, depth + 1);           // Recursive playout
                         updated_eval = self.update_eval(&current_board,&x,action_eval);     // Update evaluation
                         return (updated_eval, nb_playout + 1)},
                 // If board is final
-                None => return (self.nodes[board].eval, 0),
+                None => return (self.nodes[board].eval, depth),
             };
         }
     }
@@ -342,7 +342,7 @@ impl Engine for MctsEngine {
             nb_playout += 1; 
 
             if self.eval_function == 0 {
-                depth_playout += self.playout(board, self.value_eval).1;
+                depth_playout += self.playout(board, self.value_eval, 0).1;
 
                 let mut max_visits = 0; 
                 let mut actions = self.nodes.get_mut(board).unwrap();
@@ -418,7 +418,7 @@ mod test {
         println!("{board}");
 
         for i in 1..=1000 {
-            mcts.playout(&board, 1);
+            mcts.playout(&board, 1, 0);
             println!("After {i} playouts: \n{}", mcts.nodes[&board]);
         }
         println!("{board}");

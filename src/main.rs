@@ -113,8 +113,8 @@ fn main() {
     let b = Board::init();
 
     let mut white_engine = MctsEngine::new(0.2, 0, 6); //MinimaxEngine::new(6);
-    let mut black_engine = RandomEngine::new(); //MinimaxEngine::new(6);
-    let time_per_move : Duration = Duration::new(0, 1000000);
+    let mut black_engine = MinimaxEngine::new(6); //MinimaxEngine::new(6);
+    let time_per_move : Duration = Duration::new(0, 10000000);
 
     let mut i = 0;
     while i != num_games {
