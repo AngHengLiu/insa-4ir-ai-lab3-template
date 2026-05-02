@@ -8,10 +8,13 @@ use minimax::MinimaxEngine;
 use rand::seq::IndexedRandom;
 use mcts::*;
 
+use crate::random::RandomEngine;
+
 pub mod board;
 pub mod engine;
 pub mod mcts;
 pub mod minimax;
+pub mod random;
 
 /// Applies a number of randomly select moves and return the resulting board.
 ///
@@ -64,7 +67,7 @@ fn play_game<'a>(
         let deadline = Instant::now() + time_per_move;
         selected_output = engine.select(&board,deadline,print);
 
-        if print && board.turn == board::Color::Black && metric_index < 3 { // IL FAUT MODIFIER COLEUR DU MCTS ICI
+        if print && board.turn == board::Color::White && metric_index < 3 { // IL FAUT MODIFIER COLEUR DU MCTS ICI
             game_metrics[metric_index][0] = selected_output.metrics[0][0];
             game_metrics[metric_index][1] = selected_output.metrics[0][1];
             metric_index += 1;
@@ -109,9 +112,9 @@ fn main() {
 
     let b = Board::init();
 
-    let mut white_engine = MinimaxEngine::new(2); //MinimaxEngine::new(6);
-    let mut black_engine = MctsEngine::new(0.5, 0, 6); //MinimaxEngine::new(6);
-    let time_per_move : Duration = Duration::new(0, 100000);
+    let mut white_engine = MctsEngine::new(0.2, 0, 6); //MinimaxEngine::new(6);
+    let mut black_engine = RandomEngine::new(); //MinimaxEngine::new(6);
+    let time_per_move : Duration = Duration::new(0, 1000000);
 
     let mut i = 0;
     while i != num_games {
