@@ -63,12 +63,12 @@ pub type Count = u64;
 /// Return of the select function 
 pub struct Output {
     pub action: Option<Action>,
-    pub metrics: [[f64;2];3], // Matrix of 3 lines of  2 values that represents different measures at the beginning, the middle and the end of the game. 
+    pub metrics: [[f64;3];3], // Matrix of 3 lines of 3 values that represents different measures at the beginning, the middle and the end of the game. 
     pub board: Option<Board>,
 }
 
 impl Output {
-    pub fn create(action: Option<Action>, metrics: [[f64;2];3], board: Option<Board>) -> Output {
+    pub fn create(action: Option<Action>, metrics: [[f64;3];3], board: Option<Board>) -> Output {
         Output {
             action: action,
             metrics: metrics,
@@ -174,8 +174,10 @@ impl MctsEngine {
 }
 
 impl MctsEngine {
+
         /// Takes board and returns the length of the principal variation
     pub fn length_pv(&self, board: &Board, curr_length: u64) -> u64 {
+    let stop = 5; 
     let mut max_visits: u64 = 0;
     let mut length = curr_length;
     let current_node = &self.nodes[board];
@@ -191,8 +193,8 @@ impl MctsEngine {
 
     match chosen_out_edge {
         Some(chosen_out_edge) => {
-            if max_visits >= 100 {
-                let next_board = board.apply(&chosen_out_edge.action); // PB ICI
+            if max_visits >= stop {
+                let next_board = board.apply(&chosen_out_edge.action); 
                 return self.length_pv(&next_board, length + 1)
             } else {
                 return length
@@ -334,7 +336,7 @@ impl Engine for MctsEngine {
         let mut playout_per_sec : f64 = 0.;
         let mut average_depth : f64 = 0.;
         // Array of arrays containing the performance measures at the start, in the middle and in the end
-        let mut metrics : [[f64;2];3] = [[0.0;2];3];
+        let mut metrics : [[f64;3];3] = [[0.0;3];3];
         let mut print_num =0;
 
         while Instant::now() < deadline {
@@ -381,6 +383,7 @@ impl Engine for MctsEngine {
         if print {
             metrics[0][0] = playout_per_sec;
             metrics[0][1] = average_depth;
+            metrics[0][2] = self.length_pv(board, 0) as f64; 
         }
         let output = Output::create(best_action,metrics,None);
         return output;

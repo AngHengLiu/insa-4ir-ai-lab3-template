@@ -47,9 +47,9 @@ fn play_game<'a>(
     let mut nb_moves = 0; 
     let print_every_n_moves = 5; 
     let mut print = true;
-    let mut output: Output = Output::create(None,[[0.0;2];3],None); 
-    let mut selected_output = Output::create(None,[[0.0;2];3],None); 
-    let mut game_metrics = [[0.0;2];3];
+    let mut output: Output = Output::create(None,[[0.0;3];3],None); 
+    let mut selected_output = Output::create(None,[[0.0;3];3],None); 
+    let mut game_metrics = [[0.0;3];3];
     let mut metric_index = 0;
 
     while !(board.is_draw() || board.actions().is_empty()) {
@@ -70,6 +70,7 @@ fn play_game<'a>(
         if print && board.turn == board::Color::White && metric_index < 3 { // IL FAUT MODIFIER COLEUR DU MCTS ICI
             game_metrics[metric_index][0] = selected_output.metrics[0][0];
             game_metrics[metric_index][1] = selected_output.metrics[0][1];
+            game_metrics[metric_index][2] = selected_output.metrics[0][2];
             metric_index += 1;
         }
         if let Some(action) = selected_output.action {
@@ -94,19 +95,20 @@ fn main() {
     let mut tot_depth = 0.;
 
     let mut w_score: f32 = 0.;
+    let mut avr_score: f32 = 0.; 
     let mut tot_wins_white = 0.;
 
     let mut tot_depth_start: f64 = 0.;
     let mut tot_rate_start: f64 = 0.;
-    //let mut tot_principal_var_start: u64 = 0;
+    let mut tot_principal_var_start: f64 = 0.;
 
     let mut tot_depth_middle: f64 = 0.;
     let mut tot_rate_middle: f64 = 0.;
-    //let mut tot_principal_var_middle: u64 = 0;
+    let mut tot_principal_var_middle: f64 = 0.;
 
     let mut tot_depth_end: f64 = 0.;
     let mut tot_rate_end: f64 = 0.;
-    //let mut tot_principal_var_end: u64 = 0;
+    let mut tot_principal_var_end: f64 = 0.;
 
     let mut final_board: Output;
 
@@ -124,38 +126,52 @@ fn main() {
         if w_score == 1.0 {
             tot_wins_white += w_score;
         }
+        avr_score += w_score; 
         current_game_num += 1;
 
         // Metrics
         println!("White has so far won {tot_wins_white} out of {current_game_num} games");
         tot_rate_start += final_board.metrics[0][0];
         tot_depth_start += final_board.metrics[0][1];
+        tot_principal_var_start += final_board.metrics[0][2];
+
         tot_rate_middle += final_board.metrics[1][0];
         tot_depth_middle += final_board.metrics[1][1];
+        tot_principal_var_middle += final_board.metrics[1][2];
+
         tot_rate_end += final_board.metrics[2][0];
         tot_depth_end += final_board.metrics[2][1];
+        tot_principal_var_end += final_board.metrics[2][2];
 
         i += 1;
     }
 
-    let percentage_white_wins = (tot_wins_white/num_games as f32)*100.0;
-    let avrg_rate_start = (tot_rate_start/num_games as f64);
-    let avrg_depth_start = (tot_depth_start/num_games as f64);
-    let avrg_rate_middle = (tot_rate_middle/num_games as f64);
-    let avrg_depth_middle = (tot_depth_middle/num_games as f64);
-    let avrg_rate_end = (tot_rate_end/num_games as f64);
-    let avrg_depth_end = (tot_depth_end/num_games as f64);
+    let percentage_white_wins = (tot_wins_white / num_games as f32)*100.0;
+    let avrg_rate_start = (tot_rate_start / num_games as f64);
+    let avrg_depth_start = (tot_depth_start / num_games as f64);
+    let length_pv_start = (tot_principal_var_start / num_games as f64);
+    let avrg_rate_middle = (tot_rate_middle / num_games as f64);
+    let avrg_depth_middle = (tot_depth_middle / num_games as f64);
+    let length_pv_middle = (tot_principal_var_middle / num_games as f64);
+    let avrg_rate_end = (tot_rate_end / num_games as f64);
+    let avrg_depth_end = (tot_depth_end / num_games as f64);
+    let length_pv_end = (tot_principal_var_end / num_games as f64);
+    avr_score /= (num_games as f32); 
 
     println!("White has won {percentage_white_wins}% of the games");
+    println!("Average score of White: {avr_score}"); 
 
     println!("Average playouts per second in the beginning: {avrg_rate_start}");
     println!("Average of average playout depth in the beginning: {avrg_depth_start}");
+    println!("Average lenght of the principal variation in the beginning: {length_pv_start}\n");
 
     println!("Average playouts per second in the middle: {avrg_rate_middle}");
     println!("Average of average playout depth in the middle: {avrg_depth_middle}");
+    println!("Average lenght of the principal variation in the middle: {length_pv_middle}\n");
 
     println!("Average playouts per second in the end: {avrg_rate_end}");
     println!("Average of average playout depth in the end: {avrg_depth_end}");
+    println!("Average lenght of the principal variation in the end: {length_pv_end}\n");
 }
 
 #[allow(unused)]

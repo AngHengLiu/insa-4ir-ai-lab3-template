@@ -47,7 +47,7 @@ impl Engine for MinimaxEngine {
                 best_action = Some(a);
             }
         }
-        let output= Output::create(best_action,[[0.0;2];3],None);
+        let output= Output::create(best_action,[[0.0;3];3],None);
         return output;
     }
 

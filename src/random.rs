@@ -28,7 +28,7 @@ impl Engine for RandomEngine {
         if !tab_actions.is_empty() {
             best_action = tab_actions.choose(&mut rand::rng()); 
         }
-        let output= Output::create(best_action.cloned(),[[0.0;2];3],None);
+        let output= Output::create(best_action.cloned(),[[0.0;3];3],None);
         return output;
     }
 
