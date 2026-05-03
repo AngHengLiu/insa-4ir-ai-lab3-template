@@ -26,11 +26,13 @@ The goal is to analyse the effects of the given time per move for the engines on
 
 We can observe that, globally, as the time per move increases, the number of playouts per second increases. For when Black = MCTS, we can observe that White = Minimax globally wins less as the time per move increases. We think this is due to the fact that the MCTS, by having more time to do several playouts, can visit more nodes and select the node that is closer to the "optimal" one.
 
-### Exploration weight 
+### Exploration weight C
 Here, the goal is to analyse how changing the exploration weight for the MCTS engine will affects its performance.
 We tested weights of 0.1 to 1, mostly with 20ms time per move, and sometimes with 10ms (in yellow), to see if that would change anything on the results. For each weight, we played 5 x 100 games to increase the preciceness of our results.
 
 For when White = MCTS and Black = Minimax and 20ms time per move, we can observe that White wins more as the exploration weight increases from 0.1 up to and including 0.6. At some point around 0.8, the five results for weight 0.8 and 1 are significantly different from each other. We think that this is because the exploration term is favored "too" much, resulting in the MCTS engine exploring new nodes rather than expanding those already visited. This creates an imbalance that does not let the MCTS engine behave optimally.
+
+In addition, we observe that for White = MCTS and Black = Minimax and 10ms time per move, as indicated in yellow, the results are quite varying. It appears strange that the MCTS engine sometimes wins more than usual (compared to when time per move is 20ms), and sometimes loses more than usual, and that we cannot predict the result as they are quite varying. We have not been able to find an explanation to this.
 
 ## Evaluation with another configuration of our solver 
 For this type of evaluation, we focus on two main parameters to compete different configuration of MCTS engines against each other : exploration weight and evalation function. 
