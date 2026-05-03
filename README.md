@@ -17,10 +17,7 @@ To obtain a symetric evaluation for each configuration, we run 100 games with a 
 ## Evaluation with a baseline solver 
 For the absolute performance evaluation of the MCTS engine, we have compared it to the Minimax solver.
 
-We have evaluated the MCTS engine by creating three different evaluations modifying the:
-1. Time per move
-2. Exploration weight of the MCTS
-3. Evaluation function of the MCTS
+We have evaluated the MCTS engine by creating two different evaluations modifying the time per move and the exploration weight of the MCTS engine.
 
 The results can be found here: https://docs.google.com/spreadsheets/d/1C-duJAbnB5wOhUWz1Bo1mBrbsLdagbilawZmefNIsSo/edit?usp=sharing. They will be described and analysed below.
 
