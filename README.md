@@ -1,44 +1,29 @@
 ## MCTS for Checkers 
 
-Carole Beaugeois
-Angela Liu 
+### Note 
+This project was implemented by Carole Beaugeois and Angela Liu. We used the following git during the implementation : https://github.com/AngHengLiu/insa-4ir-ai-lab3-template
 
-The report should present:
+# How to use our project 
+To run two AI engines, you have to complete two configurations in `main.rs`. You have three different engines : 
+- RandomEngine that choses the next actions randomly between the valid actions, 
+- MinimaxEngine that follows the Minimax algorithm, 
+- MCTSEngine that implements the MCTS method. 
 
-- the experiments you have conducted and the associated results (as tables or graphs), matching the instructions at the end of the Lab3 subject. In particular, you should:
-    - have a relative evaluation of your own engine (under different configurations)
-        - this what allows you to select the best set of parameters/configuration for your engine (so your engine is evaluated against itself, directly or indirectly)
-    - have an absolute evaluation of your engine, typically against a baseline and with associated metric)
-        - here a baseline serves as an absolute reference that is shared among all solvers. For instance, if you show your engine has a 90% win-rate against
-- a discussion and interpretation of the results (why is a given configuration better than another, ...)
+The `main.rs` computes 100 games with the same confugrations. To display correct measures taken during the execution, you must indicate in the `play_game` function the color that plays the MCTS engine. 
 
+# Evaluation TO DO explain more when are the etrics from (every n moves ?)
+To obtain a symetric evaluation for each configuration, we run 100 games with a certain color/role (White or Black), we exchange colors and we run the next 100 games. The displayed metrics are a mean of the 100 games and are from the engine with the color that you indicates in the `play_game` function in `main.rs`. 
 
-warning : for each part, we must modify some parts of the code to print different parameters to measure performances 
--> print les mesures tous les ... moves ou tous les ... temps 
+## Evaluation with a baseline solver 
 
-### Angela 
-- lenght of principal variation 
+## Evaluation with another configuration of our solver 
 
--> to put on the MCTS file (or where it seems to fit the best). The best thing should be to write a function that we will calling every .... It could take different arguments as the board or whatever is needed. If it's too difficult or impossible to do, I will adapt my own functions. 
+### Weight of exploration 
 
-### Carole 
-- number of playout per second
-- average playout depth 
-- print the information and which turn we are
+It seems that the exploration weight is upside down ? 
 
-## MCTS vs MCTS 
-goal : study the best parameters 
+### Evaluation function 
+Presentation of evaluation function 
 
-## MCTS against other engines
-
-## How to evaluate 
-
-To do a table (and maybe a graph based on the table) with : 
-- type of engine used 
-- who wins 
-- playout per sec 
-- depth playout
-- lenght of principal variation 
-- parameter to evaluate (weight of exploration for example)
 
 
