@@ -31,10 +31,12 @@ That result is surprising because with a high exploration weight, we should expl
 ### Evaluation function 
 As suggested, we add a new evaluation function to replace the rollout. We use the `heuristic_evaluation` that is used by the Minimax engine. To use it, we implement a new parameter `eval_function` when creating a MctsEngine. 0 corresponds to the rollout function and 1 to the heuristic evaluation. We enable the possibility to do a mean of rollouts to evaluate a new node. To select how many rollouts we want for our mean, MctsEngine has another new parameter : `value_eval`. 
 
-As the previous method, our goal is to focus only on the parameter we want and to let other values untouched. 
+As the previous method, our goal is to focus only on the parameter we want and to let other values untouched. We fix an arbitrary exploration weight to 0.3.  
 
 The most obvious result is that the heuristic evaluation is way less effective than a rollout (100 defeats as Black and 99 defeats as White). 
 
-For the rollout function, a larger number of rollouts win against a 
+For the rollout function, a larger number of rollouts win against a smaller number. However, that trend stops between 30 and 50 rollouts for 20 ms per move. We guess that our engine doesn't have enough time to do its rollouts, leading to defeats. When we increased that time to 100 ms, our engine with 50 rollouts win against our engine with 30 rollouts. 
 
+To compare the impact of our exploration weight against the number of rollouts, we did some evaluations with an engine with an exploration weight of 1.0 and a fewer rollouts than its opponent. We didn't study a lot that case but we notice that the engine with a larger number of rollouts win with less ease or even loses depending on the different configurations. 
 
+To focus on the metrics, the number of playouts per second decreases when we increase the number of rollouts. We expected that behavior because we spend more time to do rollouts so there are less time left to do a lot of playouts. For playout depths, the greater values are obtained with an exploration weight with the value 1.0. It is consistent with our previous results.   
