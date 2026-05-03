@@ -67,7 +67,10 @@ fn play_game<'a>(
         let deadline = Instant::now() + time_per_move;
         selected_output = engine.select(&board,deadline,print);
 
-        if print && board.turn == board::Color::White && metric_index < 3 { // IL FAUT MODIFIER COLEUR DU MCTS ICI
+
+        // ------------------------------ CHANGE COLOR FOR EVALUATE THE MCTS ENGINE ---------------------------------------------------//
+
+        if print && board.turn == board::Color::White && metric_index < 3 { 
             game_metrics[metric_index][0] = selected_output.metrics[0][0];
             game_metrics[metric_index][1] = selected_output.metrics[0][1];
             game_metrics[metric_index][2] = selected_output.metrics[0][2];
@@ -114,9 +117,13 @@ fn main() {
 
     let b = Board::init();
 
+    // ----------------------------------------- ENGINE CONFIGURATION -----------------------------------------------------------//
+
     let mut white_engine = MctsEngine::new(0.2, 0, 6); //MinimaxEngine::new(6);
     let mut black_engine = MinimaxEngine::new(6); //MinimaxEngine::new(6);
     let time_per_move : Duration = Duration::new(0, 10000000);
+
+    // --------------------------------------------------------------------------------------------------------------------------//
 
     let mut i = 0;
     while i != num_games {

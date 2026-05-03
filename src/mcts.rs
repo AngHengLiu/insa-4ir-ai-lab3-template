@@ -232,7 +232,6 @@ impl MctsEngine {
                 ucb1 = turn * out_edge.eval + self.exploration_weight * ((2.0 * (node.count as f32).log10()/E.log10()) / (out_edge.visits as f32)).sqrt();
             }
 
-            // Might not be helpful
             if ucb1 == f32::INFINITY {
                 best_action = Some(out_edge.action.clone());
                 return best_action;
