@@ -9,7 +9,7 @@ use super::board::*;
 const PAWN_VALUE: f32 = 1.;
 const QUEEN_VALUE: f32 = 3.;
 
-fn heuristic_evaluation(board: &Board) -> f32 {
+pub fn heuristic_evaluation(board: &Board) -> f32 {
     let white_pov = white_heuristic_evaluation(board);
     match board.turn {
         Color::White => white_pov,
@@ -56,7 +56,7 @@ impl Engine for MinimaxEngine {
     }
 }
 
-pub fn minimax_eval(board: &Board, remaining_depth: u32) -> f32 {
+ fn minimax_eval(board: &Board, remaining_depth: u32) -> f32 {
     if remaining_depth == 0 {
         return heuristic_evaluation(board);
     }

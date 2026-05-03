@@ -7,7 +7,7 @@ use itertools::Itertools;
 use rand::seq::IndexedRandom;
 
 use crate::engine::Engine;
-use crate::minimax::minimax_eval;  
+use crate::minimax::heuristic_evaluation;  
 
 use super::board::*;
 
@@ -226,7 +226,7 @@ impl MctsEngine {
 
             let ucb1 : f32 ; 
             if (out_edge.visits == 0 ) {
-                ucb1 = turn * out_edge.eval + self.exploration_weight * f32::INFINITY;
+                ucb1 = f32::INFINITY;
             }
             else {
                 ucb1 = turn * out_edge.eval + self.exploration_weight * ((2.0 * (node.count as f32).log10()/E.log10()) / (out_edge.visits as f32)).sqrt();
@@ -237,17 +237,11 @@ impl MctsEngine {
                 return best_action;
             }
             
-            if board.turn == Color::White {
-                if ucb1 >= max_ucb1 {
-                    max_ucb1 = ucb1; 
-                    best_action = Some(out_edge.action.clone())
-                }
-            } else {
-                if ucb1 <= max_ucb1 {
-                    max_ucb1 = ucb1; 
-                    best_action = Some(out_edge.action.clone())
-                }
+            if ucb1 >= max_ucb1 {
+                max_ucb1 = ucb1; 
+                best_action = Some(out_edge.action.clone())
             }
+           
         }
         best_action
     }
@@ -259,9 +253,7 @@ impl MctsEngine {
 
         // If board not already "rollouted"
         if !self.nodes.contains_key(&current_board) {  
-
             let initial_eval;
-
             if self.eval_function == 0 { // Rollout     
                 if nb_rollout == 1 {
                     initial_eval = rollout(&current_board); 
@@ -275,7 +267,7 @@ impl MctsEngine {
                     initial_eval = sum_eval / (nb_rollout as f32); 
                 }    
             } else if self.eval_function == 1 { // Miniax evaluation function
-                initial_eval = - minimax_eval(board, nb_rollout); // Here nb_rollouts represents the depth for the minimax evaluation 
+                initial_eval = heuristic_evaluation(board);
             } else {
                 panic!("Incorrect evaluation function. Please, choose a value between 0 and 1 ");
             }
