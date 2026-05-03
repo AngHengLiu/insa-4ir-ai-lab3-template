@@ -182,7 +182,7 @@ fn example_game() {
     // play a few random move to make sure we have an fairly original starting point
     let board = after_random_moves(&board, 2);
 
-    let mut white_engine = MinimaxEngine::new(6);
+    let mut white_engine = MctsEngine::new(0.2, 1, 6);
     // let mut white_engine = MctsEngine::new(1.);
     let mut black_engine = MinimaxEngine::new(6);
 

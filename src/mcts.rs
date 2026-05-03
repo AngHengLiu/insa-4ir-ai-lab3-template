@@ -259,22 +259,32 @@ impl MctsEngine {
         let current_board : Board = board.clone();
 
         // If board not already "rollouted"
-        if !self.nodes.contains_key(&current_board) {   
-            let initial_eval;    
-            if nb_rollout == 1 {
-                initial_eval = rollout(&current_board);  // Rollout
-            }  else  {
-                let mut i = 0; 
-                let mut sum_eval = 0.0; 
-                while i < nb_rollout {
-                    sum_eval += rollout(&current_board);
-                    i += 1; 
-                }
-                initial_eval = sum_eval / (nb_rollout as f32); 
-            }                                                          
+        if !self.nodes.contains_key(&current_board) {  
+
+            let initial_eval;
+
+            if self.eval_function == 0 { // Rollout     
+                if nb_rollout == 1 {
+                    initial_eval = rollout(&current_board); 
+                }  else  {
+                    let mut i = 0; 
+                    let mut sum_eval = 0.0; 
+                    while i < nb_rollout {
+                        sum_eval += rollout(&current_board);
+                        i += 1; 
+                    }
+                    initial_eval = sum_eval / (nb_rollout as f32); 
+                }    
+            } else if self.eval_function == 1 { // Miniax evaluation function
+                initial_eval = - minimax_eval(board, nb_rollout); // Here nb_rollouts represents the depth for the minimax evaluation 
+            } else {
+                panic!("Incorrect evaluation function. Please, choose a value between 0 and 1 ");
+            }
+                                                                  
             let new_node : Node = Node::init(current_board.clone(),initial_eval);     // Create a new node with inital evaluation
             self.nodes.insert(current_board,new_node);
-            return (initial_eval, depth);                                                 // Add it to the graph (= expand)
+            return (initial_eval, depth);                                           // Add it to the graph (= expand)
+
         } else {
             let best_action : Option<Action> = self.select_ucb1(&current_board);
             let mut new_board : Board;
@@ -343,37 +353,17 @@ impl Engine for MctsEngine {
 
             nb_playout += 1; 
 
-            if self.eval_function == 0 {
-                depth_playout += self.playout(board, self.value_eval, 0).1;
+            depth_playout += self.playout(board, self.value_eval, 0).1;
 
-                let mut max_visits = 0; 
-                let mut actions = self.nodes.get_mut(board).unwrap();
+            let mut max_visits = 0; 
+            let mut actions = self.nodes.get_mut(board).unwrap();
 
-                for out_edge in actions.out_edges .iter_mut() {
-                    if out_edge.visits >= max_visits {
-                        best_action = Some(out_edge.action.clone());
-                        max_visits = out_edge.visits; 
-                    }
-                } 
-
-            } else if self.eval_function == 1 {
-                
-                let actions = board.actions();
-                let mut best_value = f32::MIN;
-                depth_playout += (self.value_eval as u64);
-
-                 for a in actions {
-                    let result = board.apply(&a);
-                    let value = -minimax_eval(&result, self.value_eval);
-                    if value > best_value {
-                        best_value = value;
-                        best_action = Some(a);
-                    }
+            for out_edge in actions.out_edges .iter_mut() {
+                if out_edge.visits >= max_visits {
+                    best_action = Some(out_edge.action.clone());
+                    max_visits = out_edge.visits; 
                 }
-
-            } else {
-                panic!("Incorrect evaluation function. Please, choose a value between 0 and 1 ");
-            }
+            } 
         }
 
         let elapsed = start.elapsed().as_micros() as f64;
